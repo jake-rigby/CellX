@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="false" width="100%" >
+		
+	<fx:Script>
+		<![CDATA[
+			
+			[Bindable] public var isSelected:Boolean = false;
+		
+			[Bindable] public var bmd:BitmapData;
+			
+			override public function set data(value:Object):void
+			{
+				bmd = value.img as BitmapData;
+				super.data = value;
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				scale();
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+			}
+			
+			private function scale():void
+			{
+				var f:Number = parent.width/bmd.width;
+				bi.width = parent.width;
+				bi.height = bmd.height * f;
+			}
+
+		]]>
+	</fx:Script>
+	
+	<s:VGroup paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5">		
+		<s:Label text="time {data.time}" color="white"/>
+		<s:BitmapImage id="bi" source="{bmd}" />
+	</s:VGroup>
+	
+	<s:Rect width="100%" height="100%">
+		<s:stroke>
+			<s:SolidColorStroke weight="3" color="0x0000ff" />
+		</s:stroke>
+	</s:Rect>
+	
+</s:ItemRenderer>
