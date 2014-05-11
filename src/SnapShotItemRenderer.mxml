@@ -38,10 +38,10 @@
 		<s:BitmapImage id="bi" source="{bmd}" />
 	</s:VGroup>
 	
-	<s:Rect width="100%" height="100%">
-		<s:stroke>
-			<s:SolidColorStroke weight="3" color="0x0000ff" />
-		</s:stroke>
+	<s:Rect width="100%" height="100%" visible="{isSelected}">
+		<s:fill>
+			<s:SolidColor color="0x0000ff" alpha="0.5" />
+		</s:fill>
 	</s:Rect>
 	
 </s:ItemRenderer>

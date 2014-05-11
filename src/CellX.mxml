@@ -7,19 +7,21 @@
 	<fx:Script>
 		<![CDATA[
 			import mx.collections.ArrayCollection;
-			import mx.controls.sliderClasses.Slider;
 			import mx.graphics.ImageSnapshot;
 			
-			import spark.components.mediaClasses.ScrubBar;
 			import spark.events.RendererExistenceEvent;
 			
 			[Bindable] private var shots:ArrayCollection = new ArrayCollection();
+			[Bindable] private var isEditing:Boolean = false;
+			[Bindable] private var currentBmd:BitmapData;
+			
+			private var _renderers:Array = [];
 			
 			private function onCreationComplete(evt:Event):void
 			{
 				//var l:AssetLoader = new AssetLoader('test.flv');
-				video.scrubBar.stepSize = 0.01;
-				video.scrubBar.snapInterval = 0.01;
+				//video.scrubBar.stepSize = 0.01;
+				//video.scrubBar.snapInterval = 0.01;
 				
 				var f:File = new File();
 				f = File.desktopDirectory.resolvePath('cell.flv');
@@ -30,24 +32,47 @@
 			
 			private function snapshot():void
 			{
+				var bmd:BitmapData = ImageSnapshot.captureBitmapData(video);//.videoObject); 
 				shots.addItem({
-					img: ImageSnapshot.captureBitmapData(video.videoObject),
+					img: bmd,
 					time: video.currentTime
 				});
 				
 				video.pause();
+				currentBmd = bmd;
+				isEditing = true;
+			}
+			
+			private function stopEditing():void
+			{
+				isEditing = false;
 			}
 			
 			private function onSnapshotAdded(evt:RendererExistenceEvent):void
 			{
-				
+				evt.renderer.addEventListener(MouseEvent.CLICK, onClickSnapshot);
+				_renderers.push(evt.renderer);
 			}
 			
 			private function onSnapshotRemoved(evt:RendererExistenceEvent):void
 			{
-				
+				evt.renderer.removeEventListener(MouseEvent.CLICK, onClickSnapshot);
+				_renderers.splice(_renderers.indexOf(evt.renderer));
 			}
 
+			
+			protected function onClickVideo(event:MouseEvent):void
+			{
+				if (video.playing) video.pause() else video.play();
+			}
+			
+			private function onClickSnapshot(event:MouseEvent):void
+			{
+				for (var i:int = 0; i < _renderers.length; i++) {
+					if (_renderers[i] == event.currentTarget) (_renderers[i] as SnapShotItemRenderer).isSelected = true;
+					else (_renderers[i] as SnapShotItemRenderer).isSelected = false;
+				}
+			}
 			
 		]]>
 	</fx:Script>
@@ -70,14 +95,18 @@
 		<s:VGroup width="100%" height="100%">
 			<s:HGroup verticalAlign="bottom">
 				<s:Button click="snapshot()" label="Capture Frame"/>
-				<s:Label color="white" text="{video.currentTime.toFixed(3)}"/>
+				<s:Button click="stopEditing()" visible="{isEditing}"/>
+				<s:Label color="white" text="{video.currentTime}"/>
 				<s:Button label="&lt;" click="{video.seek(video.currentTime - 0.01)}"/> 
 				<s:Button label="&gt;" click="{video.seek(video.currentTime + 0.01)}"/> 
 			</s:HGroup>
-			<s:Group>
-				<s:VideoPlayer id="video" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/>
-				<local:MeasurementComponent width="100%" height="100%"/>
+			<s:Group id="display">
+				<s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)"
+							   width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/>
+				<local:MeasurementComponent width="100%" height="100%" visible="{isEditing}" bmd="{currentBmd}"
+											clipAndEnableScrolling="true" />
 			</s:Group>
+			<local:VideoScrub videoDisplay="{video}" width="{display.width}" stepSize="0.01" maximum="{video.duration}"/>
 		</s:VGroup>
 		
 	</s:HGroup>

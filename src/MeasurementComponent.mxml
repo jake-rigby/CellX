@@ -2,14 +2,16 @@
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx"
-		 creationComplete="onCreationComplete(event)" click="onCanvasClick(event)" enterFrame="onEnterFrame(event)" >
+		 creationComplete="onCreationComplete(event)" 
+		 click="onCanvasClick(event)" 
+		 enterFrame="onEnterFrame(event)" >
+	
 	<fx:Declarations>
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
 	</fx:Declarations>
 	
 	<fx:Script>
 		<![CDATA[
-			import spark.primitives.Rect;
 			
 			private var points:Vector.<Point> = new Vector.<Point>();
 			private var editPoint:int = -1;
@@ -81,7 +83,7 @@
 			public function set bmd(value:BitmapData):void
 			{
 				_bmd = value;
-				dispatchEvent("bmdUpdated");
+				dispatchEvent(new Event("bmdUpdated"));
 			}
 
 			
