@@ -74,7 +74,7 @@
 					tc:int = int(Math.floor(video.currentTime * 1000)),
 					res:Point = new Point(video.videoObject.width, video.videoObject.height);
 				
-				var vo:CaptureVO = new CaptureVO("name", bmd, tc, res, file.name);		
+				var vo:CaptureVO = new CaptureVO(file.name+':'+tc, bmd, tc, res, file.name);		
 					
 					
 				shots.addItem(vo);
@@ -104,11 +104,12 @@
 			
 			private function onClickSnapshot(event:MouseEvent):void
 			{
-				selectVO((event.target as SnapShotItemRenderer).vo);
+				selectVO((event.currentTarget as SnapShotItemRenderer).vo);
 			}
 			
 			private function selectVO(vo:CaptureVO):void
 			{
+				
 				for (var i:int = 0; i < _renderers.length; i++) {
 					if (_renderers[i].vo == vo) _renderers[i].isSelected = true;
 					else _renderers[i].isSelected = false;
@@ -171,16 +172,17 @@
 				<s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/>
 				<local:MeasurementComponent width="100%" height="100%" visible="{isEditing}" id="editor" clipAndEnableScrolling="true"/>
 			</s:Group>
-			<local:VideoScrub videoDisplay="{video}" width="{display.width}" stepSize="0.01" maximum="{video.duration}" visible="{Boolean(video.duration)}"/>
-			<s:HGroup width="{display.width}" visible="{Boolean(video.duration)}">
+			<s:HGroup width="{display.width}" visible="{!isEditing &amp;&amp; video.duration}" variableColumnWidth="true">
+				<s:Label color="white" click="{if (video.playing) video.pause() else video.play()}" useHandCursor="true" text="{video.playing ?'||':'►'}" width="30" fontSize="25"/>
 				<s:Label color="white" text="◄" click="decFrame(event)"/>
 				<s:Label color="white" text="{currentTime.toFixed(3)}s"/>
 				<s:Label color="white" text="►" click="incFrame(event)"/>
-				<s:Group width="100%"><s:Label color="white" text="{fileName}" right="0"/></s:Group>
+				<local:VideoScrub videoDisplay="{video}" stepSize="0.01" maximum="{video.duration}" width="100%"/>
+				<s:Label color="white" text="{fileName}" right="0"/>				
 			</s:HGroup>
 			<s:HGroup verticalAlign="bottom" height="30">
-				<s:Button click="snapshot()" label="Capture" visible="{video.duration &amp;&amp; !video.playing}" includeInLayout="{!video.playing}" height="100%"/>
-				<s:Button click="{isEditing = false}" label="stop editing" visible="{isEditing}" includeInLayout="{isEditing}" height="100%"/>
+				<s:Button click="snapshot()" label="Grab frame" visible="{video.duration &amp;&amp; !video.playing &amp;&amp; !isEditing}" includeInLayout="{!isEditing}" height="100%"/>
+				<s:Button click="{ selectVO(null); isEditing = false;}" label="Back to capture" visible="{isEditing}" includeInLayout="{isEditing}" height="100%"/>
 			</s:HGroup>			
 		</s:VGroup>
 		

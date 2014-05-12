@@ -30,6 +30,7 @@
 			public function set data(vo:CaptureVO):void
 			{
 				this.vo = vo;
+				if (!vo) return;
 				bi.source = vo.bmd;
 				points = vo.points;
 			}
