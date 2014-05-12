@@ -4,7 +4,6 @@
 		 xmlns:mx="library://ns.adobe.com/flex/mx" 
 		 mouseDown="onCanvasMouseDown(event)" 
 		 mouseUp="onCanvasMouseUp(event)"
-		 click="onCanvasClick(event)" 
 		 enterFrame="onEnterFrame(event)"
 		 rightClick="{isEditing = false}"
 		 rollOut="onCanvasRollOut(event)" >
@@ -12,10 +11,6 @@
 	<fx:Metadata>
 		[Event(name="isCalibrationChange", type="flash.events.Event")]
 	</fx:Metadata>
-	
-	<fx:Declarations>
-		<!-- Place non-visual elements (e.g., services, value objects) here -->
-	</fx:Declarations>
 	
 	<fx:Script>
 		<![CDATA[
@@ -30,7 +25,7 @@
 			[Bindable] public var isEditing:Boolean = false;
 			[Bindable] public var vo:CaptureVO;
 			[Bindable] public var isCalibration:Boolean = false;
-		
+			
 				
 			public function set data(vo:CaptureVO):void
 			{
@@ -44,6 +39,28 @@
 				return isCalibrationCheck.selected;
 			}
 			
+			public function segmentDistToPoint(segA:Point, segB:Point, p:Point):Number
+			{
+				var p2:Point = new Point(segB.x - segA.x, segB.y - segA.y);
+				var something:Number = p2.x*p2.x + p2.y*p2.y;
+				var u:Number = ((p.x - segA.x) * p2.x + (p.y - segA.y) * p2.y) / something;
+				
+				if (u > 1)
+					u = 1;
+				else if (u < 0)
+					u = 0;
+				
+				var x:Number = segA.x + u * p2.x;
+				var y:Number = segA.y + u * p2.y;
+				
+				var dx:Number = x - p.x;
+				var dy:Number = y - p.y;
+				
+				var dist:Number = Math.sqrt(dx*dx + dy*dy);
+				
+				return dist;
+			}
+			
 			private function onEnterFrame(event:Event):void
 			{
 				draw();
@@ -52,6 +69,7 @@
 			private function draw():void
 			{
 				var mpt:Point = new Point(canvas.mouseX, canvas.mouseY);
+				var snap:Boolean = false;
 				canvas.graphics.clear();
 				
 				if (!pointEditMode) hoverPoint = -1;
@@ -65,7 +83,17 @@
 
 					// line from last point to this one
 					if (i > 0) {
-						canvas.graphics.lineStyle(1, 0x0000ff);
+						
+						// distance from the mouse point to this line
+						var d:Number = segmentDistToPoint(points[i-1], points[i], mpt);
+						
+						if (d < 10) {
+							canvas.graphics.lineStyle(1, 0x00ff00);
+							snap = true;
+						} else {
+							canvas.graphics.lineStyle(1, 0x0000ff);
+						}
+						
 						canvas.graphics.moveTo(points[i-1].x, points[i-1].y);
 						canvas.graphics.lineTo(points[i].x, points[i].y);
 					}
@@ -79,31 +107,33 @@
 					canvas.graphics.drawCircle(points[i].x, points[i].y, 8);
 				}
 				
-				if (isEditing && i && i > -1 && hoverPoint < 0 && !pointEditMode) {
+				if (isEditing && i && i > -1 && hoverPoint < 0 && !pointEditMode && !snap) {
 					canvas.graphics.moveTo(points[i-1].x, points[i-1].y);					
 					canvas.graphics.lineTo(canvas.mouseX, canvas.mouseY);
 				}
 				
-				dbg.text = String(hoverPoint);
+
+				if (vo) lengthLbl.text = 'length '+vo.length.toFixed(4); 
 			}
 			
 			protected function onCanvasMouseDown(evt:MouseEvent):void
 			{
+				var mpt:Point = new Point(canvas.mouseX, canvas.mouseY);
 				if (hoverPoint > -1) pointEditMode = true;
 				else {
 					// find the closest line to the click point, if below snap threshold, add another point there
 					for (var i:int = 1; i < points.length; i++) {
 						
-						var m:Number = ( points[i].x - points[i-1].x ) / ( points[i].y - points[i-1].y ),
-							b:Number = points[i].y - ( m * points[i].x ),
-							d:Number = Math.abs( evt.localY - ( m * evt.localX ) - b ) / Math.sqrt( (m*m) + 1);
-						
+						var d:Number = segmentDistToPoint(points[i-1], points[i], mpt);						
 						if (d < 10) break;
 					}
 					
+					// if we broke before checking all lines, we need to insert a new one
 					if (i < points.length) {
 						
 						points.splice(i, 0, new Point(evt.localX, evt.localY));
+						hoverPoint = i;
+						pointEditMode = true;
 						return;
 					}
 					
@@ -111,7 +141,6 @@
 					if (!isEditing) isEditing = true;
 					else points.push(new Point(evt.localX, evt.localY));
 					draw();
-					
 				}
 			}
 										
@@ -128,15 +157,12 @@
 				}
 				isEditing = false;
 			}
-			
-			protected function onCanvasClick(event:MouseEvent):void
-			{
-			}
 
 			
 			protected function onChangeCalibration(event:Event):void
 			{
-				dispatchEvent(new Event(IS_CALIBRATION_CHANGE));
+				var evt:Event = new Event(IS_CALIBRATION_CHANGE);
+				dispatchEvent(evt);
 				if (isCalibrationCheck.selected) {
 					calibrationVO = vo;
 				} else if (calibrationVO == vo) {
@@ -150,12 +176,21 @@
 	<s:BitmapImage width="100%" height="100%" id="bi"/>
 	<mx:UIComponent id="canvas" width="100%" height="100%" />
 	
+	<s:VGroup top="5" left="5">
+		<s:Label color="white" id="lineLen"/>
+		<s:Label color="white" text="name {vo.name}"/>
+		<s:Label color="white" text="timecode {vo.timecode}"/>
+		<s:Label color="white" text="source {vo.source}"/>
+		<s:Label color="white" text="resolution {vo.nativeResolution}"/>
+		<s:Label color="white" text="length" id="lengthLbl"/>
+
+	</s:VGroup>
+	
 	<s:HGroup top="5" right="5" verticalAlign="bottom">
 		<s:TextInput id="calibInput" visible="{calibrationVO == vo}" />
 		<s:CheckBox id="isCalibrationCheck" selected="{calibrationVO == vo}" change="onChangeCalibration(event)" 
 					click="{event.stopPropagation()}"/>
 		<s:Label color="white" text="use as calibration" />
-		<s:Label color="red" id="dbg" />
 	</s:HGroup>
 	
 </s:Group>

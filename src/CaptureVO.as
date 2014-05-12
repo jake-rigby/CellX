@@ -11,15 +11,16 @@ package
 		private var _timecode:int;
 		private var _points:Vector.<Point>;
 		private var _nativeResolution:Point;
+		private var _source:String;
 		
-		public function CaptureVO(name:String, bmd:BitmapData, timecode:int, nativeResoltion:Point) 
+		public function CaptureVO(name:String, bmd:BitmapData, timecode:int, nativeResoltion:Point, source:String) 
 		{
 			_name = name;
 			_bmd = bmd;
 			_timecode = timecode;
 			_points = new Vector.<Point>();
 			_nativeResolution = nativeResoltion;
-			
+			_source = source;	
 		}
 
 		[Bindable(event="event")]public function get name():String
@@ -46,7 +47,7 @@ package
 		{
 			var result:Number = 0;
 			for (var i:int = 1; i < _points.length; i++) {
-				result = _points[i].subtract(_points[i - 1]).length;
+				result += _points[i].subtract(_points[i - 1]).length;
 			}
 			return result;
 		}
@@ -54,6 +55,11 @@ package
 		[Bindable(event="event")]public function get nativeResolution():Point
 		{
 			return _nativeResolution;
+		}
+		
+		[Bindable(event="event")]public function get source():String
+		{
+			return _source;
 		}
 
 	}

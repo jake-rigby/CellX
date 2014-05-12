@@ -45,7 +45,7 @@
 			[Bindable] public var currentTime:Number;
 			
 			private  var file:File;
-			private var _renderers:Array = [];
+			private var _renderers:Vector.<SnapShotItemRenderer> = new Vector.<SnapShotItemRenderer>;
 			private var _filename:String;
 			
 			
@@ -74,13 +74,14 @@
 					tc:int = int(Math.floor(video.currentTime * 1000)),
 					res:Point = new Point(video.videoObject.width, video.videoObject.height);
 				
-				var vo:CaptureVO = new CaptureVO("name", bmd, tc,res);		
+				var vo:CaptureVO = new CaptureVO("name", bmd, tc, res, file.name);		
 					
 					
 				shots.addItem(vo);
+				editor.data = vo;
 				
 				video.pause();
-				isEditing = true;
+				selectVO(vo);
 			}
 			
 			private function onSnapshotAdded(evt:RendererExistenceEvent):void
@@ -92,7 +93,7 @@
 			private function onSnapshotRemoved(evt:RendererExistenceEvent):void
 			{
 				evt.renderer.removeEventListener(MouseEvent.CLICK, onClickSnapshot);
-				_renderers.splice(_renderers.indexOf(evt.renderer));
+				_renderers.splice(_renderers.indexOf(evt.renderer), 1);
 			}
 
 			
@@ -103,12 +104,16 @@
 			
 			private function onClickSnapshot(event:MouseEvent):void
 			{
+				selectVO((event.target as SnapShotItemRenderer).vo);
+			}
+			
+			private function selectVO(vo:CaptureVO):void
+			{
 				for (var i:int = 0; i < _renderers.length; i++) {
-					if (_renderers[i] == event.currentTarget) (_renderers[i] as SnapShotItemRenderer).isSelected = true;
-					else (_renderers[i] as SnapShotItemRenderer).isSelected = false;
+					if (_renderers[i].vo == vo) _renderers[i].isSelected = true;
+					else _renderers[i].isSelected = false;
 				}
-				editor.data = event.currentTarget.data as CaptureVO;
-				
+				editor.data = vo;				
 				isEditing = true;
 			}
 			
