@@ -2,9 +2,9 @@
 <s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
 		 xmlns:s="library://ns.adobe.com/flex/spark" 
 		 xmlns:mx="library://ns.adobe.com/flex/mx"
-		 creationComplete="onCreationComplete(event)" 
 		 click="onCanvasClick(event)" 
-		 enterFrame="onEnterFrame(event)" >
+		 enterFrame="onEnterFrame(event)"
+		 rightClick="{editing = false}" >
 	
 	<fx:Declarations>
 		<!-- Place non-visual elements (e.g., services, value objects) here -->
@@ -15,13 +15,27 @@
 			
 			private var points:Vector.<Point> = new Vector.<Point>();
 			private var editPoint:int = -1;
-			private var isEditing:Boolean = true;
+			private var _isEditing:Boolean = true;
 			private var _bmd:BitmapData;
 			
 			[Bindable] private var length:Number;
-				
-			private function onCreationComplete(evt:Event):void
+			
+			[Bindable(event="editingChanged")] public function get isEditing():Boolean {
+				return _isEditing;
+			}
+			
+			private function set editing(value:Boolean):void
 			{
+				_isEditing = value;
+				dispatchEvent(new Event("editingChanged"));
+			}
+				
+			public function set data(vo:CaptureVO):void
+			{
+				_bmd = vo.bmd;
+				bi.source = vo.bmd;
+				points = vo.points;
+				editPoint = points.length - 1;
 				
 			}
 			
@@ -49,7 +63,7 @@
 					drawPoint(points[i].x, points[i].y);
 				}
 				
-				if (isEditing && i && i > -1) {
+				if (_isEditing && i && i > -1) {
 					canvas.graphics.moveTo(points[i-1].x, points[i-1].y);					
 					canvas.graphics.lineTo(mouseX, mouseY);
 				}
@@ -71,7 +85,11 @@
 			
 			protected function onCanvasClick(event:MouseEvent):void
 			{
-				points.push(new Point(event.localX, event.localY));
+				if (!_isEditing) {
+					editing = true;
+				}
+				else points.push(new Point(event.localX, event.localY));
+
 				draw();
 			}
 
@@ -90,8 +108,9 @@
 		]]>
 	</fx:Script>
 	
-	<s:BitmapImage width="100%" height="100%" source="{bmd}"/>
+	<s:BitmapImage width="100%" height="100%" id="bi"/>
 	<mx:UIComponent id="canvas" width="100%" height="100%"/>
+	<s:Label fontSize="35" color="white" fontWeight="bold" text="{isEditing?'click to start measuring':'right click to stop measuring'}" top="10" right="10"/>
 	<s:Label color="white" text="{length}" />
 	
 </s:Group>

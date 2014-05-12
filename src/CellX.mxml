@@ -2,50 +2,86 @@
 <s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
 					   xmlns:mx="library://ns.adobe.com/flex/mx"
-					   creationComplete="onCreationComplete(event)"
-					    backgroundColor="0" width="1000" height="700" xmlns:local="*">
+					   backgroundColor="0" width="1000" height="700" xmlns:local="*" creationComplete="onCreationComplete(event)">
+	
+	<s:menu>
+		<mx:FlexNativeMenu dataProvider="{nativeMenu}" labelField="@label" showRoot="false" itemClick="menuClickHandler(event)"/>
+	</s:menu>
+	
+	<fx:Declarations>
+		<fx:XML format="e4x" id="nativeMenu"> 
+			<root> 
+				<menuitem label="File"> 
+					<!--menuitem label="1" type="check" toggled="true"/> 
+					<menuitem type="separator"/-->      
+					<menuitem label="Load"/> 
+					<!--menuitem label="SubMenuItem A-3"> 
+					<menuitem label="Sub-SubMenuItem A-3-1"/> 
+					<menuitem label="Sub-SubMenuItem A-3-2" enabled="false"/> 
+					<menuitem label="Sub-SubMenuItem A-3-3"/> 
+					</menuitem--> 
+				</menuitem> 
+			</root> 
+		</fx:XML>   
+	</fx:Declarations>
+	
 	<fx:Script>
 		<![CDATA[
 			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.events.FlexNativeMenuEvent;
 			import mx.graphics.ImageSnapshot;
+			
+			import org.osmf.events.MediaPlayerStateChangeEvent;
+			import org.osmf.events.TimeEvent;
+			import org.osmf.media.MediaPlayerState;
 			
 			import spark.events.RendererExistenceEvent;
 			
 			[Bindable] private var shots:ArrayCollection = new ArrayCollection();
 			[Bindable] private var isEditing:Boolean = false;
 			[Bindable] private var currentBmd:BitmapData;
+			[Bindable] public var fileName:String;
+			[Bindable] public var currentTime:Number;
 			
+			private  var file:File;
 			private var _renderers:Array = [];
+			private var _filename:String;
 			
-			private function onCreationComplete(evt:Event):void
+			
+			protected function menuClickHandler(event:FlexNativeMenuEvent):void
 			{
-				//var l:AssetLoader = new AssetLoader('test.flv');
-				//video.scrubBar.stepSize = 0.01;
-				//video.scrubBar.snapInterval = 0.01;
-				
-				var f:File = new File();
-				f = File.desktopDirectory.resolvePath('cell.flv');
-				video.source = f.url;
-				video.play();
+				if (event.label == 'Load') loadVideo();
+			}
 			
+			private function loadVideo():void
+			{
+				if (!file) file = new File();
+				file.addEventListener(Event.SELECT, openFile);
+				file.browseForOpen("*.flv",[new FileFilter("videos","*.flv")]);
+			}
+			
+			private function openFile(evt:Event):void
+			{
+				video.source = file.url;
+				fileName = file.name;
+				video.play();
 			}
 			
 			private function snapshot():void
 			{
-				var bmd:BitmapData = ImageSnapshot.captureBitmapData(video);//.videoObject); 
-				shots.addItem({
-					img: bmd,
-					time: video.currentTime
-				});
+				var bmd:BitmapData = ImageSnapshot.captureBitmapData(video),
+					tc:int = int(Math.floor(video.currentTime * 1000)),
+					res:Point = new Point(video.videoObject.width, video.videoObject.height);
+				
+				var vo:CaptureVO = new CaptureVO("name", bmd, tc,res);		
+					
+					
+				shots.addItem(vo);
 				
 				video.pause();
 				currentBmd = bmd;
 				isEditing = true;
-			}
-			
-			private function stopEditing():void
-			{
-				isEditing = false;
 			}
 			
 			private function onSnapshotAdded(evt:RendererExistenceEvent):void
@@ -72,41 +108,77 @@
 					if (_renderers[i] == event.currentTarget) (_renderers[i] as SnapShotItemRenderer).isSelected = true;
 					else (_renderers[i] as SnapShotItemRenderer).isSelected = false;
 				}
+				editor.data = event.currentTarget.data as CaptureVO;
+				isEditing = true;
+			}
+			
+			protected function onCreationComplete(event:FlexEvent):void
+			{
+				video.addEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE, onVideoStateChange);
+			}
+			
+			protected function onVideoTimeChange(event:TimeEvent):void
+			{
+				currentTime = event.time;
+			}
+			
+			protected function incFrame(evt:Event):void
+			{
+				if (video.playing) return;
+				currentTime += 0.1;
+				video.seek(currentTime);
+			}
+			
+			protected function decFrame(evt:Event):void
+			{
+				if (video.playing) return;
+				currentTime -= 0.1;
+				video.seek(currentTime);
+			}
+			
+			protected function onVideoStateChange(event:MediaPlayerStateChangeEvent):void
+			{
+				if (event.state == MediaPlayerState.PAUSED) {
+					video.removeEventListener(TimeEvent.CURRENT_TIME_CHANGE, onVideoTimeChange);
+				} else {
+					video.addEventListener(TimeEvent.CURRENT_TIME_CHANGE, onVideoTimeChange);
+				}
 			}
 			
 		]]>
 	</fx:Script>
-	<fx:Declarations>
-		<!-- Place non-visual elements (e.g., services, value objects) here -->
-	</fx:Declarations>
+	
+	<s:Button width="200" height="100" label="Load a Video" click="{loadVideo()}" horizontalCenter="0" verticalCenter="0" visible="{!Boolean(video.duration)}" includeInLayout="{!Boolean(video.duration)}"/>
 	
 	<s:HGroup width="100%" height="100%" variableColumnWidth="true">
 		
-		<s:Scroller id="scrl" width="200" height="100%">
-		
-		<s:DataGroup id="shotBrowser" width="100%" height="100%" dataProvider="{shots}" itemRenderer="SnapShotItemRenderer"
-					 rendererAdd="onSnapshotAdded(event)" rendererRemove="onSnapshotRemoved(event)" >
-			<s:layout>
-				<s:VerticalLayout/>
-			</s:layout>
-		</s:DataGroup>
+		<s:Scroller id="scrl" width="200" height="100%">		
+			<s:DataGroup id="shotBrowser" height="100%" dataProvider="{shots}" itemRenderer="SnapShotItemRenderer"
+						 rendererAdd="onSnapshotAdded(event)" rendererRemove="onSnapshotRemoved(event)" >
+				<s:layout>
+					<s:VerticalLayout/>
+				</s:layout>
+			</s:DataGroup>
 		</s:Scroller>
 		
 		<s:VGroup width="100%" height="100%">
-			<s:HGroup verticalAlign="bottom">
-				<s:Button click="snapshot()" label="Capture Frame"/>
-				<s:Button click="stopEditing()" visible="{isEditing}"/>
-				<s:Label color="white" text="{video.currentTime}"/>
-				<s:Button label="&lt;" click="{video.seek(video.currentTime - 0.01)}"/> 
-				<s:Button label="&gt;" click="{video.seek(video.currentTime + 0.01)}"/> 
-			</s:HGroup>
 			<s:Group id="display">
-				<s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)"
+				<s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" 
 							   width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/>
-				<local:MeasurementComponent width="100%" height="100%" visible="{isEditing}" bmd="{currentBmd}"
+				<local:MeasurementComponent width="100%" height="100%" visible="{isEditing}" id="editor"
 											clipAndEnableScrolling="true" />
 			</s:Group>
-			<local:VideoScrub videoDisplay="{video}" width="{display.width}" stepSize="0.01" maximum="{video.duration}"/>
+			<local:VideoScrub videoDisplay="{video}" width="{display.width}" stepSize="0.01" maximum="{video.duration}" visible="{Boolean(video.duration)}"/>
+			<s:HGroup width="{display.width}" visible="{Boolean(video.duration)}">
+				<s:Label color="white" text="◄" click="decFrame(event)"/>
+				<s:Label color="white" text="{currentTime.toFixed(3)}s"/>
+				<s:Label color="white" text="►" click="incFrame(event)"/>
+				<s:Group width="100%"><s:Label color="white" text="{fileName}" right="0"/></s:Group>
+			</s:HGroup>
+			<s:HGroup verticalAlign="bottom" height="30">
+				<s:Button click="snapshot()" label="Capture" visible="{video.duration &amp;&amp; !video.playing}" includeInLayout="{!video.playing}" height="100%"/>
+				<s:Button click="{isEditing = false}" label="stop editing" visible="{isEditing}" includeInLayout="{isEditing}" height="100%"/>
+			</s:HGroup>			
 		</s:VGroup>
 		
 	</s:HGroup>
