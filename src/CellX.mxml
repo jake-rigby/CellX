@@ -32,15 +32,15 @@
 			import mx.events.FlexNativeMenuEvent;
 			import mx.graphics.ImageSnapshot;
 			
+			import spark.events.RendererExistenceEvent;
+			
 			import org.osmf.events.MediaPlayerStateChangeEvent;
 			import org.osmf.events.TimeEvent;
 			import org.osmf.media.MediaPlayerState;
 			
-			import spark.events.RendererExistenceEvent;
-			
 			[Bindable] private var shots:ArrayCollection = new ArrayCollection();
 			[Bindable] private var isEditing:Boolean = false;
-			[Bindable] private var currentBmd:BitmapData;
+			
 			[Bindable] public var fileName:String;
 			[Bindable] public var currentTime:Number;
 			
@@ -80,7 +80,6 @@
 				shots.addItem(vo);
 				
 				video.pause();
-				currentBmd = bmd;
 				isEditing = true;
 			}
 			
@@ -109,6 +108,7 @@
 					else (_renderers[i] as SnapShotItemRenderer).isSelected = false;
 				}
 				editor.data = event.currentTarget.data as CaptureVO;
+				
 				isEditing = true;
 			}
 			
@@ -163,10 +163,8 @@
 		
 		<s:VGroup width="100%" height="100%">
 			<s:Group id="display">
-				<s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" 
-							   width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/>
-				<local:MeasurementComponent width="100%" height="100%" visible="{isEditing}" id="editor"
-											clipAndEnableScrolling="true" />
+				<s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/>
+				<local:MeasurementComponent width="100%" height="100%" visible="{isEditing}" id="editor" clipAndEnableScrolling="true"/>
 			</s:Group>
 			<local:VideoScrub videoDisplay="{video}" width="{display.width}" stepSize="0.01" maximum="{video.duration}" visible="{Boolean(video.duration)}"/>
 			<s:HGroup width="{display.width}" visible="{Boolean(video.duration)}">
