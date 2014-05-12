@@ -38,13 +38,13 @@
 			import org.osmf.events.TimeEvent;
 			import org.osmf.media.MediaPlayerState;
 			
-			[Bindable] private var shots:ArrayCollection = new ArrayCollection();
-			[Bindable] private var isEditing:Boolean = false;
-			
 			[Bindable] public var fileName:String;
 			[Bindable] public var currentTime:Number;
 			
-			private  var file:File;
+			[Bindable] private var shots:ArrayCollection = new ArrayCollection();
+			[Bindable] private var isEditing:Boolean = false;
+			
+			private var file:File;
 			private var _renderers:Vector.<SnapShotItemRenderer> = new Vector.<SnapShotItemRenderer>;
 			private var _filename:String;
 			
@@ -72,10 +72,8 @@
 			{
 				var bmd:BitmapData = ImageSnapshot.captureBitmapData(video),
 					tc:int = int(Math.floor(video.currentTime * 1000)),
-					res:Point = new Point(video.videoObject.width, video.videoObject.height);
-				
-				var vo:CaptureVO = new CaptureVO(file.name+':'+tc, bmd, tc, res, file.name);		
-					
+					res:Point = new Point(video.videoObject.width, video.videoObject.height),
+					vo:CaptureVO = new CaptureVO(file.name+':'+tc, bmd, tc, res, file.name);		
 					
 				shots.addItem(vo);
 				editor.data = vo;

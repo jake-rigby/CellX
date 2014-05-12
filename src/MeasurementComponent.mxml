@@ -140,7 +140,7 @@
 					
 					// add a point if we got here
 					if (!isEditing) isEditing = true;
-					else points.push(new Point(evt.localX, evt.localY));
+					points.push(new Point(evt.localX, evt.localY));
 					draw();
 				}
 			}
@@ -178,8 +178,7 @@
 	<mx:UIComponent id="canvas" width="100%" height="100%" />
 	
 	<s:VGroup top="5" left="5">
-		<s:Label color="white" id="lineLen"/>
-		<s:Label color="white" text="name {vo.name}"/>
+		<s:TextInput text="@{vo.name}" />
 		<s:Label color="white" text="timecode {vo.timecode}"/>
 		<s:Label color="white" text="source {vo.source}"/>
 		<s:Label color="white" text="resolution {vo.nativeResolution}"/>
@@ -190,7 +189,7 @@
 	<s:HGroup top="5" right="5" verticalAlign="bottom">
 		<s:TextInput id="calibInput" visible="{calibrationVO == vo}" />
 		<s:CheckBox id="isCalibrationCheck" selected="{calibrationVO == vo}" change="onChangeCalibration(event)" 
-					click="{event.stopPropagation()}"/>
+					click="{event.stopPropagation()}" mouseDown="{event.stopPropagation()}"/>
 		<s:Label color="white" text="use as calibration" />
 	</s:HGroup>
 	

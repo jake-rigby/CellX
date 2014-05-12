@@ -1,6 +1,7 @@
 package
 {
 	import flash.display.BitmapData;
+	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.geom.Point;
 
@@ -23,9 +24,15 @@ package
 			_source = source;	
 		}
 
-		[Bindable(event="event")]public function get name():String
+		[Bindable(event="nameChanged")]public function get name():String
 		{
 			return _name;
+		}
+		
+		public function set name(value:String):void
+		{
+			_name = value;
+			dispatchEvent(new Event("nameChanged"));
 		}
 
 		[Bindable(event="event")]public function get bmd():BitmapData
