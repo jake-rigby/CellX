@@ -10,6 +10,7 @@ package
 		private var _name:String;
 		private var _bmd:BitmapData;
 		private var _timecode:int;
+		[Bindable] public var calibration:String;
 		private var _points:Vector.<Point>;
 		private var _nativeResolution:Point;
 		private var _source:String;

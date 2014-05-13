@@ -35,10 +35,9 @@
 		]]>
 	</fx:Script>
 	<s:Group top="3" bottom="3" right="3" left="3">
-		<s:VGroup right="3" bottom="2">		
+		<s:VGroup right="3" bottom="2" horizontalAlign="right">		
 			<s:Label text="{vo.name}" color="white"/>
-			<s:Label text="time {vo.timecode}ms" color="white"/>
-			<s:Label text="res {res}" color="white"/>
+			<s:Label text="frame time {vo.timecode}ms" color="white"/>
 		</s:VGroup>
 		<s:BitmapImage id="bi" source="{vo.bmd}" />
 	</s:Group>

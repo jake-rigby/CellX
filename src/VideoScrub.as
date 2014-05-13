@@ -1,10 +1,10 @@
 package
 {
+	import org.osmf.events.TimeEvent;
+	
 	import spark.components.HSlider;
 	import spark.components.VideoDisplay;
 	import spark.events.TrackBaseEvent;
-	
-	import org.osmf.events.TimeEvent;
 	
 	public class VideoScrub extends HSlider
 	{

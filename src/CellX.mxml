@@ -14,7 +14,8 @@
 				<menuitem label="File"> 
 					<!--menuitem label="1" type="check" toggled="true"/> 
 					<menuitem type="separator"/-->      
-					<menuitem label="Load"/> 
+					<menuitem label="Load"/>
+					<menuitem label="Export CSV"/>
 					<!--menuitem label="SubMenuItem A-3"> 
 					<menuitem label="Sub-SubMenuItem A-3-1"/> 
 					<menuitem label="Sub-SubMenuItem A-3-2" enabled="false"/> 
@@ -32,11 +33,11 @@
 			import mx.events.FlexNativeMenuEvent;
 			import mx.graphics.ImageSnapshot;
 			
-			import spark.events.RendererExistenceEvent;
-			
 			import org.osmf.events.MediaPlayerStateChangeEvent;
 			import org.osmf.events.TimeEvent;
 			import org.osmf.media.MediaPlayerState;
+			
+			import spark.events.RendererExistenceEvent;
 			
 			[Bindable] public var fileName:String;
 			[Bindable] public var currentTime:Number;
@@ -52,6 +53,7 @@
 			protected function menuClickHandler(event:FlexNativeMenuEvent):void
 			{
 				if (event.label == 'Load') loadVideo();
+				if (event.label == 'Export CSV') exportCSV(); 
 			}
 			
 			private function loadVideo():void
@@ -59,6 +61,25 @@
 				if (!file) file = new File();
 				file.addEventListener(Event.SELECT, openFile);
 				file.browseForOpen("*.flv",[new FileFilter("videos","*.flv")]);
+			}
+			
+			private function exportCSV():void
+			{
+				var csv:String = 'name,timecode,length,calibrated\n';
+				for (var i:int = 0; i < _renderers.length; i++) {
+					var vo:CaptureVO = _renderers[i].vo;
+					csv += '"'+vo.name+'",'+vo.timecode+','+vo.length;
+					if (editor.calibrationVO) {
+						csv+=','+(vo.length * (Number(editor.calibrationVO.calibration) / editor.calibrationVO.length) ).toFixed(4);
+					}
+					csv+='\n';
+				}
+				var bytes:ByteArray = new ByteArray();
+				bytes.writeUTF(csv);
+				var fileRef:FileReference = new FileReference();
+				//fileRef.addEventListener(Event.SELECT, onFileSelected); 
+				fileRef.save(csv, "output.csv");
+
 			}
 			
 			private function openFile(evt:Event):void
@@ -102,7 +123,10 @@
 			
 			private function onClickSnapshot(event:MouseEvent):void
 			{
-				selectVO((event.currentTarget as SnapShotItemRenderer).vo);
+				var vo:CaptureVO = (event.currentTarget as SnapShotItemRenderer).vo;
+				if (!vo) return;
+				selectVO(vo);
+				video.seek(vo.timecode/1000);
 			}
 			
 			private function selectVO(vo:CaptureVO):void
