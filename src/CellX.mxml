@@ -29,15 +29,17 @@
 	<fx:Script>
 		<![CDATA[
 			import mx.collections.ArrayCollection;
+			import mx.core.IVisualElement;
+			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
 			import mx.events.FlexNativeMenuEvent;
 			import mx.graphics.ImageSnapshot;
 			
+			import spark.events.RendererExistenceEvent;
+			
 			import org.osmf.events.MediaPlayerStateChangeEvent;
 			import org.osmf.events.TimeEvent;
 			import org.osmf.media.MediaPlayerState;
-			
-			import spark.events.RendererExistenceEvent;
 			
 			[Bindable] public var fileName:String;
 			[Bindable] public var currentTime:Number;
@@ -49,6 +51,9 @@
 			private var _renderers:Vector.<SnapShotItemRenderer> = new Vector.<SnapShotItemRenderer>;
 			private var _filename:String;
 			
+			private var vt:VideoTool;
+			private var v:Video;
+			
 			
 			protected function menuClickHandler(event:FlexNativeMenuEvent):void
 			{
@@ -58,9 +63,17 @@
 			
 			private function loadVideo():void
 			{
+				/*
 				if (!file) file = new File();
 				file.addEventListener(Event.SELECT, openFile);
 				file.browseForOpen("*.flv",[new FileFilter("videos","*.flv")]);
+				*/
+				v = new Video();
+				vt = new VideoTool(v);
+				var container:UIComponent = new UIComponent();
+				container.addChild(v);
+				addElement(container);
+				vt.browseVideo();
 			}
 			
 			private function exportCSV():void
@@ -81,14 +94,14 @@
 				fileRef.save(csv, "output.csv");
 
 			}
-			
+			/*
 			private function openFile(evt:Event):void
 			{
 				video.source = file.url;
 				fileName = file.name;
 				video.play();
 			}
-			
+			*/
 			private function snapshot():void
 			{
 				var bmd:BitmapData = ImageSnapshot.captureBitmapData(video),
