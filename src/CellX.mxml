@@ -28,12 +28,16 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import flash.filesystem.FileStream;
+			import flash.media.Video;
+			import flash.net.NetStream;
 			import mx.collections.ArrayCollection;
 			import mx.core.IVisualElement;
 			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
 			import mx.events.FlexNativeMenuEvent;
 			import mx.graphics.ImageSnapshot;
+			import mx.messaging.channels.StreamingAMFChannel;
 			
 			import spark.events.RendererExistenceEvent;
 			
@@ -53,6 +57,7 @@
 			
 			private var vt:VideoTool;
 			private var v:Video;
+			private var netstream:NetStream;
 			
 			
 			protected function menuClickHandler(event:FlexNativeMenuEvent):void
@@ -70,9 +75,11 @@
 				*/
 				v = new Video();
 				vt = new VideoTool(v);
-				var container:UIComponent = new UIComponent();
-				container.addChild(v);
-				addElement(container);
+				netstream = 
+				//var container:UIComponent = new UIComponent();
+				//container.addChild(v);
+				//addElement(container);
+				videoContainer.addChild(v);
 				vt.browseVideo();
 			}
 			
@@ -104,15 +111,15 @@
 			*/
 			private function snapshot():void
 			{
-				var bmd:BitmapData = ImageSnapshot.captureBitmapData(video),
-					tc:int = int(Math.floor(video.currentTime * 1000)),
-					res:Point = new Point(video.videoObject.width, video.videoObject.height),
+				var bmd:BitmapData = ImageSnapshot.captureBitmapData(v),
+					tc:int = int(Math.floor( netstream.time * 1000)),
+					res:Point = new Point(v.width, v.height),
 					vo:CaptureVO = new CaptureVO(file.name+':'+tc, bmd, tc, res, file.name);		
 					
 				shots.addItem(vo);
 				editor.data = vo;
 				
-				video.pause();
+				netstream.pause();
 				selectVO(vo);
 			}
 			
@@ -131,7 +138,7 @@
 			
 			protected function onClickVideo(event:MouseEvent):void
 			{
-				if (video.playing) video.pause() else video.play();
+				if (v.) netstream.pause() else netstream.play();
 			}
 			
 			private function onClickSnapshot(event:MouseEvent):void
@@ -139,7 +146,7 @@
 				var vo:CaptureVO = (event.currentTarget as SnapShotItemRenderer).vo;
 				if (!vo) return;
 				selectVO(vo);
-				video.seek(vo.timecode/1000);
+				netstream.seek(vo.timecode/1000);
 			}
 			
 			private function selectVO(vo:CaptureVO):void
@@ -155,7 +162,7 @@
 			
 			protected function onCreationComplete(event:FlexEvent):void
 			{
-				video.addEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE, onVideoStateChange);
+				netstream.addEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE, onVideoStateChange);
 			}
 			
 			protected function onVideoTimeChange(event:TimeEvent):void
@@ -165,24 +172,24 @@
 			
 			protected function incFrame(evt:Event):void
 			{
-				if (video.playing) return;
+				if (netstream.playing) return;
 				currentTime += 0.1;
-				video.seek(currentTime);
+				netstream.seek(currentTime);
 			}
 			
 			protected function decFrame(evt:Event):void
 			{
-				if (video.playing) return;
+				if (netstream.playing) return;
 				currentTime -= 0.1;
-				video.seek(currentTime);
+				netstream.seek(currentTime);
 			}
 			
 			protected function onVideoStateChange(event:MediaPlayerStateChangeEvent):void
 			{
 				if (event.state == MediaPlayerState.PAUSED) {
-					video.removeEventListener(TimeEvent.CURRENT_TIME_CHANGE, onVideoTimeChange);
+					netstream.removeEventListener(TimeEvent.CURRENT_TIME_CHANGE, onVideoTimeChange);
 				} else {
-					video.addEventListener(TimeEvent.CURRENT_TIME_CHANGE, onVideoTimeChange);
+					netstream.addEventListener(TimeEvent.CURRENT_TIME_CHANGE, onVideoTimeChange);
 				}
 			}
 			
@@ -204,7 +211,8 @@
 		
 		<s:VGroup width="100%" height="100%">
 			<s:Group id="display">
-				<s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/>
+				<!--s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/-->
+				<mx:UIComponent id="videoContainer" visible="{!isEditing}" click="onClickVideo(event)" />
 				<local:MeasurementComponent width="100%" height="100%" visible="{isEditing}" id="editor" clipAndEnableScrolling="true"/>
 			</s:Group>
 			<s:HGroup width="{display.width}" visible="{!isEditing &amp;&amp; video.duration}" variableColumnWidth="true">
