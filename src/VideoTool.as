@@ -6,6 +6,7 @@ package
 	import flash.desktop.NativeProcess;
 	import flash.desktop.NativeProcessStartupInfo;
 	import flash.events.Event;
+	import flash.events.EventDispatcher;
 	import flash.events.IOErrorEvent;
 	import flash.events.NetStatusEvent;
 	import flash.events.ProgressEvent;
@@ -15,14 +16,19 @@ package
 	import flash.net.NetConnection;
 	import flash.net.NetStream;
 	import flash.utils.ByteArray;
+	import spark.components.VideoDisplay;
 	
-	public class VideoTool
+	import mx.core.mx_internal;
+	
+	import  org.osmf.media.MediaPlayer;
+	
+	public class VideoTool extends EventDispatcher
 	{
 		private var pFile:File;
 		private var vfile:File;
 		private var process:NativeProcess;
 		private var pInfo:NativeProcessStartupInfo;
-		private var args:Vector.<String > ;
+		private var args:Vector.<String> ;
 		
 		private var stream:NetStream;
 		private var connection:NetConnection;
@@ -35,6 +41,7 @@ package
 			if (!NativeProcess.isSupported) 
 				throw new Error("Native Process not supported");			
 			pFile = File.applicationDirectory.resolvePath("ffmpeg.exe"); //<-- ensure present locally
+			
 		}
 		
 		public function seek(offset:Number):void
@@ -103,6 +110,7 @@ package
 			{
 				case "NetConnection.Connect.Success" :
 					start_decode_process();
+					dispatchEvent(event);
 					break;
 				
 				case "NetStream.Play.StreamNotFound" :
@@ -120,12 +128,14 @@ package
 		{
 			stream = new NetStream(connection);
 			stream.addEventListener(NetStatusEvent.NET_STATUS, onNetstatusHandler);
-			stream.client = {onMetaData:metaDataHandler};
+			stream.client = { onMetaData:metaDataHandler };
 			video.attachNetStream(stream);
-			stream.play(null);
+			//video.mx_internal::videoPlayer.visible = true;
+			//videoDisplay.mx_internal::videoPlayer.attachNetStream(incomingStream);
+			//videoDisplay.mx_internal::videoPlayer.visible = true;			stream.play(null);
 			args = new Vector.<String>();
 			//args.push("-i",vfile.nativePath,"-sameq","-f","flv","-");
-			args.push('-i',vfile.nativePath,'-ar','22050','-b:v','2048k','-f','flv','-','-g:1','sgop'); // <-- see comments in reference
+			args.push('-i',vfile.nativePath,'-ar','22050','-b:v','2048k','-f','flv','-','-g:1'); // <-- see comments in reference
 			pInfo.arguments = args;
 			if (process.running) {
 				process.closeInput();

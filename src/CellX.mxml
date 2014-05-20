@@ -38,7 +38,6 @@
 			import mx.events.FlexNativeMenuEvent;
 			import mx.graphics.ImageSnapshot;
 			import mx.messaging.channels.StreamingAMFChannel;
-			import spark.components.VideoDisplay;
 			
 			import spark.events.RendererExistenceEvent;
 			
@@ -67,19 +66,14 @@
 			}
 			
 			private function loadVideo():void
-			{
-				
+			{	
+				/*
 				if (!file) file = new File();
 				file.addEventListener(Event.SELECT, openFile);
 				file.browseForOpen("*.flv",[new FileFilter("videos","*.*")]);
-				/*
-				v = new Video();
-				vt = new VideoTool(v);
-				var container:UIComponent = new UIComponent();
-				container.addChild(v);
-				videoContainer.addChild(container);
-				vt.browseVideo();
 				*/
+				vt = new VideoTool(video.video);
+				vt.browseVideo();
 			}
 			
 			private function exportCSV():void
@@ -100,19 +94,19 @@
 				fileRef.save(csv, "output.csv");
 
 			}
-			
+			/*
 			private function openFile(evt:Event):void
 			{
 				video.source = file.url;
 				fileName = file.name;
 				video.play();
 			}
-			
+			*/
 			private function snapshot():void
 			{
 				var bmd:BitmapData = ImageSnapshot.captureBitmapData(video),
 					tc:int = int(Math.floor( video.currentTime * 1000)),
-					res:Point = new Point(video.videoObject.width, video.videoObject.height),
+					res:Point = new Point(video.video.width, video.video.height),
 					vo:CaptureVO = new CaptureVO(file.name+':'+tc, bmd, tc, res, file.name);		
 					
 				shots.addItem(vo);
@@ -137,7 +131,7 @@
 			
 			protected function onClickVideo(event:MouseEvent):void
 			{
-				if (video.playing) video.pause() else video.play();
+				if (video.isPlaying) video.pause() else video.play();
 			}
 			
 			private function onClickSnapshot(event:MouseEvent):void
@@ -171,14 +165,14 @@
 			
 			protected function incFrame(evt:Event):void
 			{
-				if (video.playing) return;
+				if (video.isPlaying) return;
 				currentTime += 0.04;
 				video.seek(currentTime);
 			}
 			
 			protected function decFrame(evt:Event):void
 			{
-				if (video.playing) return;
+				if (video.isPlaying) return;
 				currentTime -= 0.04;
 				video.seek(currentTime);
 			}
@@ -195,8 +189,6 @@
 		]]>
 	</fx:Script>
 	
-	<s:Button width="200" height="100" label="Load a Video" click="{loadVideo()}" horizontalCenter="0" verticalCenter="0" visible="{!Boolean(video.duration)}" includeInLayout="{!Boolean(video.duration)}"/>
-	
 	<s:HGroup width="100%" height="100%" variableColumnWidth="true">
 		
 		<s:Scroller id="scrl" width="200" height="100%">		
@@ -210,25 +202,28 @@
 		
 		<s:VGroup width="100%" height="100%">
 			<s:Group id="display">
-				<s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/>
-				<mx:UIComponent id="videoContainer" visible="{!isEditing}" click="onClickVideo(event)" />
+				<!--s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/-->
+				<local:Player id="video"/>
+				<mx:UIComponent id="videoContainer" visible="{!isEditing}" click="onClickVideo(event)" width="100%" height="100%" />
 				<local:MeasurementComponent width="100%" height="100%" visible="{isEditing}" id="editor" clipAndEnableScrolling="true"/>
 			</s:Group>
 			<s:HGroup width="{display.width}" visible="{!isEditing &amp;&amp; video.duration}" variableColumnWidth="true">
-				<s:Label color="white" click="{if (video.playing) video.pause() else video.play()}" useHandCursor="true" text="{video.playing ?'||':'►'}" width="30" fontSize="25"/>
+				<s:Label color="white" click="{if (video.isPlaying) video.pause() else video.play()}" useHandCursor="true" text="{video.isPlaying ?'||':'►'}" width="30" fontSize="25"/>
 				<s:Label color="white" text="◄" click="decFrame(event)"/>
 				<s:Label color="white" text="{currentTime.toFixed(3)}s"/>
 				<s:Label color="white" text="►" click="incFrame(event)"/>
-				<local:VideoScrub videoDisplay="{video}" stepSize="0.01" maximum="{video.duration}" width="100%"/>
+				<!--local:VideoScrub videoDisplay="{video}" stepSize="0.01" maximum="{video.duration}" width="100%"/-->
 				<s:Label color="white" text="{fileName}" right="0"/>				
 			</s:HGroup>
 			<s:HGroup verticalAlign="bottom" height="30">
 				
-				<s:Button click="snapshot()" label="Grab frame" visible="{video.duration &amp;&amp; !video.playing &amp;&amp; !isEditing}" includeInLayout="{!isEditing}" height="100%"/>
+				<s:Button click="snapshot()" label="Grab frame" visible="{video.duration &amp;&amp; !video.isPlaying &amp;&amp; !isEditing}" includeInLayout="{!isEditing}" height="100%"/>
 				<s:Button click="{ selectVO(null); isEditing = false;}" label="Back to capture" visible="{isEditing}" includeInLayout="{isEditing}" height="100%"/>
 			</s:HGroup>			
 		</s:VGroup>
 		
 	</s:HGroup>
+	
+	<s:Button width="200" height="100" label="Load a Video" click="{loadVideo()}" horizontalCenter="0" verticalCenter="0" includeInLayout="{!Boolean(video.duration)}"/>
 
 </s:WindowedApplication>
