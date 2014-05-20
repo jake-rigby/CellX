@@ -125,7 +125,7 @@ package
 			stream.play(null);
 			args = new Vector.<String>();
 			//args.push("-i",vfile.nativePath,"-sameq","-f","flv","-");
-			args.push('-i',vfile.nativePath,'-ar','22050','-b:v','2048k','-f','flv','-','-g'); // <-- see comments in reference
+			args.push('-i',vfile.nativePath,'-ar','22050','-b:v','2048k','-f','flv','-','-g:1','sgop'); // <-- see comments in reference
 			pInfo.arguments = args;
 			if (process.running) {
 				process.closeInput();

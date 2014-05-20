@@ -38,6 +38,7 @@
 			import mx.events.FlexNativeMenuEvent;
 			import mx.graphics.ImageSnapshot;
 			import mx.messaging.channels.StreamingAMFChannel;
+			import spark.components.VideoDisplay;
 			
 			import spark.events.RendererExistenceEvent;
 			
@@ -57,7 +58,6 @@
 			
 			private var vt:VideoTool;
 			private var v:Video;
-			private var netstream:NetStream;
 			
 			
 			protected function menuClickHandler(event:FlexNativeMenuEvent):void
@@ -68,19 +68,18 @@
 			
 			private function loadVideo():void
 			{
-				/*
+				
 				if (!file) file = new File();
 				file.addEventListener(Event.SELECT, openFile);
-				file.browseForOpen("*.flv",[new FileFilter("videos","*.flv")]);
-				*/
+				file.browseForOpen("*.flv",[new FileFilter("videos","*.*")]);
+				/*
 				v = new Video();
 				vt = new VideoTool(v);
-				netstream = 
-				//var container:UIComponent = new UIComponent();
-				//container.addChild(v);
-				//addElement(container);
-				videoContainer.addChild(v);
+				var container:UIComponent = new UIComponent();
+				container.addChild(v);
+				videoContainer.addChild(container);
 				vt.browseVideo();
+				*/
 			}
 			
 			private function exportCSV():void
@@ -101,25 +100,25 @@
 				fileRef.save(csv, "output.csv");
 
 			}
-			/*
+			
 			private function openFile(evt:Event):void
 			{
 				video.source = file.url;
 				fileName = file.name;
 				video.play();
 			}
-			*/
+			
 			private function snapshot():void
 			{
-				var bmd:BitmapData = ImageSnapshot.captureBitmapData(v),
-					tc:int = int(Math.floor( netstream.time * 1000)),
-					res:Point = new Point(v.width, v.height),
+				var bmd:BitmapData = ImageSnapshot.captureBitmapData(video),
+					tc:int = int(Math.floor( video.currentTime * 1000)),
+					res:Point = new Point(video.videoObject.width, video.videoObject.height),
 					vo:CaptureVO = new CaptureVO(file.name+':'+tc, bmd, tc, res, file.name);		
 					
 				shots.addItem(vo);
 				editor.data = vo;
 				
-				netstream.pause();
+				video.pause();
 				selectVO(vo);
 			}
 			
@@ -138,7 +137,7 @@
 			
 			protected function onClickVideo(event:MouseEvent):void
 			{
-				if (v.) netstream.pause() else netstream.play();
+				if (video.playing) video.pause() else video.play();
 			}
 			
 			private function onClickSnapshot(event:MouseEvent):void
@@ -146,7 +145,7 @@
 				var vo:CaptureVO = (event.currentTarget as SnapShotItemRenderer).vo;
 				if (!vo) return;
 				selectVO(vo);
-				netstream.seek(vo.timecode/1000);
+				video.seek(vo.timecode/1000);
 			}
 			
 			private function selectVO(vo:CaptureVO):void
@@ -162,7 +161,7 @@
 			
 			protected function onCreationComplete(event:FlexEvent):void
 			{
-				netstream.addEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE, onVideoStateChange);
+				video.addEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE, onVideoStateChange);
 			}
 			
 			protected function onVideoTimeChange(event:TimeEvent):void
@@ -172,24 +171,24 @@
 			
 			protected function incFrame(evt:Event):void
 			{
-				if (netstream.playing) return;
-				currentTime += 0.1;
-				netstream.seek(currentTime);
+				if (video.playing) return;
+				currentTime += 0.04;
+				video.seek(currentTime);
 			}
 			
 			protected function decFrame(evt:Event):void
 			{
-				if (netstream.playing) return;
-				currentTime -= 0.1;
-				netstream.seek(currentTime);
+				if (video.playing) return;
+				currentTime -= 0.04;
+				video.seek(currentTime);
 			}
 			
 			protected function onVideoStateChange(event:MediaPlayerStateChangeEvent):void
 			{
 				if (event.state == MediaPlayerState.PAUSED) {
-					netstream.removeEventListener(TimeEvent.CURRENT_TIME_CHANGE, onVideoTimeChange);
+					video.removeEventListener(TimeEvent.CURRENT_TIME_CHANGE, onVideoTimeChange);
 				} else {
-					netstream.addEventListener(TimeEvent.CURRENT_TIME_CHANGE, onVideoTimeChange);
+					video.addEventListener(TimeEvent.CURRENT_TIME_CHANGE, onVideoTimeChange);
 				}
 			}
 			
@@ -211,7 +210,7 @@
 		
 		<s:VGroup width="100%" height="100%">
 			<s:Group id="display">
-				<!--s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/-->
+				<s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/>
 				<mx:UIComponent id="videoContainer" visible="{!isEditing}" click="onClickVideo(event)" />
 				<local:MeasurementComponent width="100%" height="100%" visible="{isEditing}" id="editor" clipAndEnableScrolling="true"/>
 			</s:Group>
@@ -224,6 +223,7 @@
 				<s:Label color="white" text="{fileName}" right="0"/>				
 			</s:HGroup>
 			<s:HGroup verticalAlign="bottom" height="30">
+				
 				<s:Button click="snapshot()" label="Grab frame" visible="{video.duration &amp;&amp; !video.playing &amp;&amp; !isEditing}" includeInLayout="{!isEditing}" height="100%"/>
 				<s:Button click="{ selectVO(null); isEditing = false;}" label="Back to capture" visible="{isEditing}" includeInLayout="{isEditing}" height="100%"/>
 			</s:HGroup>			
