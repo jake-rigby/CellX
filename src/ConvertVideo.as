@@ -18,6 +18,7 @@ package
 	public class ConvertVideo 
 	{
 		private var _pFile:File;
+		private var _vFile:File;
 		private var _process:NativeProcess;
 		
 		public function ConvertVideo() 
@@ -27,11 +28,11 @@ package
 			
 		public function browseVideo():void
 		{
-			if (! vfile) {
-				vfile = new File();
+			if (! _vFile) {
+				_vFile = new File();
 			}
-			vfile.addEventListener(Event.SELECT, onSelectHandler);
-			vfile.browseForOpen("Select Video File");
+			_vFile.addEventListener(Event.SELECT, onSelectHandler);
+			_vFile.browseForOpen("Select Video File");
 		}	
 
 		private function init():void
@@ -75,6 +76,12 @@ package
 			{
 				console.log(evt.bytesTotal);
 			}
+		}
+		
+		private function startProcess()
+		{
+			var args:Vector.<String> = new Vector.<String>;
+			args.push('-i', _vFile.nativePath, 'force_key_frames', 'expr:gte(t,n_forced*0.04)', _vFile.name.split('.')[0] + '_upscaled');
 		}
 		
 		
