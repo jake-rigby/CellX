@@ -70,10 +70,12 @@
 			
 			private function loadVideo():void
 			{	
+				var converter:ConvertVideo = new ConvertVideo();
+				/*
 				if (!file) file = new File();
 				file.addEventListener(Event.SELECT, openFile);
 				file.browseForOpen("*.flv",[new FileFilter("videos","*.flv")]);
-		
+				*/
 				/*
 				_videoTool = new VideoTool(video.video);
 				_videoTool.browseVideo();

@@ -24,6 +24,7 @@ package
 		public function ConvertVideo() 
 		{
 			_pFile = File.applicationDirectory.resolvePath("ffmpeg.exe");
+			browseVideo();
 		}
 			
 		public function browseVideo():void
@@ -33,7 +34,12 @@ package
 			}
 			_vFile.addEventListener(Event.SELECT, onSelectHandler);
 			_vFile.browseForOpen("Select Video File");
-		}	
+		}
+		
+		private function onSelectHandler(event : Event):void
+		{           
+			init();
+		}
 
 		private function init():void
 		{
@@ -41,8 +47,8 @@ package
 				_process.closeInput();
 				_process.exit();
 			}
-			pInfo = new NativeProcessStartupInfo();
-			pInfo.executable = pFile;
+			var pInfo:NativeProcessStartupInfo = new NativeProcessStartupInfo();
+			pInfo.executable = _pFile;
 			_process = new NativeProcess();
 			_process.addEventListener(ProgressEvent.STANDARD_ERROR_DATA,onErrorS);
 			_process.addEventListener(IOErrorEvent.STANDARD_INPUT_IO_ERROR,onError);
@@ -51,7 +57,7 @@ package
 			_process.addEventListener(ProgressEvent.STANDARD_OUTPUT_DATA, onOutputData);
 			_process.addEventListener(ProgressEvent.STANDARD_INPUT_PROGRESS, inputProgressListener);
 			//debug_info.appendText("PROCESS_INIT_END\n")
-			start_netConnection();
+			//start_netConnection();
 		}
 
 		private function onError(evt:IOErrorEvent):void
@@ -72,13 +78,13 @@ package
 		
 		private function onOutputData(evt:ProgressEvent):void
 		{
-			if (process.running)
+			if (_process.running)
 			{
-				console.log(evt.bytesTotal);
+				trace(evt.bytesTotal);
 			}
 		}
 		
-		private function startProcess()
+		private function startProcess():void
 		{
 			var args:Vector.<String> = new Vector.<String>;
 			args.push('-i', _vFile.nativePath, 'force_key_frames', 'expr:gte(t,n_forced*0.04)', _vFile.name.split('.')[0] + '_upscaled');
