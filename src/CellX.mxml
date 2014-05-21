@@ -28,6 +28,7 @@
 	
 	<fx:Script>
 		<![CDATA[
+			import flash.display.BitmapData;
 			import flash.filesystem.FileStream;
 			import flash.media.Video;
 			import flash.net.NetStream;
@@ -45,19 +46,21 @@
 			import org.osmf.events.TimeEvent;
 			import org.osmf.media.MediaPlayerState;
 			
+			import flash.system.Security;
+			
 			[Bindable] public var fileName:String;
 			[Bindable] public var currentTime:Number;
 			
 			[Bindable] private var shots:ArrayCollection = new ArrayCollection();
 			[Bindable] private var isEditing:Boolean = false;
 			
+			[Bindable] private var isVideoLoaded:Boolean = false;
+			
 			private var file:File;
 			private var _renderers:Vector.<SnapShotItemRenderer> = new Vector.<SnapShotItemRenderer>;
 			private var _filename:String;
 			
-			private var vt:VideoTool;
-			private var v:Video;
-			
+			//private var _videoTool:VideoTool;
 			
 			protected function menuClickHandler(event:FlexNativeMenuEvent):void
 			{
@@ -67,13 +70,14 @@
 			
 			private function loadVideo():void
 			{	
-				/*
 				if (!file) file = new File();
 				file.addEventListener(Event.SELECT, openFile);
-				file.browseForOpen("*.flv",[new FileFilter("videos","*.*")]);
+				file.browseForOpen("*.flv",[new FileFilter("videos","*.flv")]);
+		
+				/*
+				_videoTool = new VideoTool(video.video);
+				_videoTool.browseVideo();
 				*/
-				vt = new VideoTool(video.video);
-				vt.browseVideo();
 			}
 			
 			private function exportCSV():void
@@ -94,19 +98,24 @@
 				fileRef.save(csv, "output.csv");
 
 			}
-			/*
+			
 			private function openFile(evt:Event):void
 			{
 				video.source = file.url;
 				fileName = file.name;
 				video.play();
+				isVideoLoaded = true;
 			}
-			*/
+			
 			private function snapshot():void
 			{
-				var bmd:BitmapData = ImageSnapshot.captureBitmapData(video),
-					tc:int = int(Math.floor( video.currentTime * 1000)),
-					res:Point = new Point(video.video.width, video.video.height),
+				var bmd:BitmapData = ImageSnapshot.captureBitmapData(video);
+				// why this doesn't work with net streams : http://stackoverflow.com/questions/5607047/how-can-i-use-bitmapdata-draw-with-netstream-appendbytes
+				//var bmd:BitmapData = new BitmapData(.video.width, video.video.height);
+				//bmd.draw(video.video);
+				var tc:int = int(Math.floor( video.currentTime * 1000)),
+					res:Point = new Point(video.width, video.height),
+					//vo:CaptureVO = new CaptureVO(_videoTool.file.name+':'+tc, bmd, tc, res, _videoTool.file.name);		
 					vo:CaptureVO = new CaptureVO(file.name+':'+tc, bmd, tc, res, file.name);		
 					
 				shots.addItem(vo);
@@ -131,7 +140,8 @@
 			
 			protected function onClickVideo(event:MouseEvent):void
 			{
-				if (video.isPlaying) video.pause() else video.play();
+				//if (video.isPlaying) video.pause() else video.play();
+				if (video.playing) video.pause() else video.play();
 			}
 			
 			private function onClickSnapshot(event:MouseEvent):void
@@ -156,6 +166,8 @@
 			protected function onCreationComplete(event:FlexEvent):void
 			{
 				video.addEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE, onVideoStateChange);
+				//Security.allowDomain("*");
+
 			}
 			
 			protected function onVideoTimeChange(event:TimeEvent):void
@@ -165,14 +177,16 @@
 			
 			protected function incFrame(evt:Event):void
 			{
-				if (video.isPlaying) return;
+				//if (video.isPlaying) return;
+				if (video.playing) return;
 				currentTime += 0.04;
 				video.seek(currentTime);
 			}
 			
 			protected function decFrame(evt:Event):void
 			{
-				if (video.isPlaying) return;
+				//if (video.isPlaying) return;
+				if (video.playing) return;
 				currentTime -= 0.04;
 				video.seek(currentTime);
 			}
@@ -202,28 +216,27 @@
 		
 		<s:VGroup width="100%" height="100%">
 			<s:Group id="display">
-				<!--s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/-->
-				<local:Player id="video"/>
-				<mx:UIComponent id="videoContainer" visible="{!isEditing}" click="onClickVideo(event)" width="100%" height="100%" />
+				<s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/>
+				<!--local:Player id="video" width="100%" height="100%" /-->
 				<local:MeasurementComponent width="100%" height="100%" visible="{isEditing}" id="editor" clipAndEnableScrolling="true"/>
 			</s:Group>
 			<s:HGroup width="{display.width}" visible="{!isEditing &amp;&amp; video.duration}" variableColumnWidth="true">
-				<s:Label color="white" click="{if (video.isPlaying) video.pause() else video.play()}" useHandCursor="true" text="{video.isPlaying ?'||':'►'}" width="30" fontSize="25"/>
+				<s:Label color="white" click="{if (video.playing) video.pause() else video.play()}" useHandCursor="true" text="{video.playing ?'||':'►'}" width="30" fontSize="25"/>
 				<s:Label color="white" text="◄" click="decFrame(event)"/>
 				<s:Label color="white" text="{currentTime.toFixed(3)}s"/>
 				<s:Label color="white" text="►" click="incFrame(event)"/>
-				<!--local:VideoScrub videoDisplay="{video}" stepSize="0.01" maximum="{video.duration}" width="100%"/-->
+				<local:VideoScrub videoDisplay="{video}" stepSize="0.01" maximum="{video.duration}" width="100%"/>
 				<s:Label color="white" text="{fileName}" right="0"/>				
 			</s:HGroup>
 			<s:HGroup verticalAlign="bottom" height="30">
 				
-				<s:Button click="snapshot()" label="Grab frame" visible="{video.duration &amp;&amp; !video.isPlaying &amp;&amp; !isEditing}" includeInLayout="{!isEditing}" height="100%"/>
+				<s:Button click="snapshot()" label="Grab frame" visible="{video.duration &amp;&amp; !video.playing &amp;&amp; !isEditing}" includeInLayout="{!isEditing}" height="100%"/>
 				<s:Button click="{ selectVO(null); isEditing = false;}" label="Back to capture" visible="{isEditing}" includeInLayout="{isEditing}" height="100%"/>
 			</s:HGroup>			
 		</s:VGroup>
 		
 	</s:HGroup>
 	
-	<s:Button width="200" height="100" label="Load a Video" click="{loadVideo()}" horizontalCenter="0" verticalCenter="0" includeInLayout="{!Boolean(video.duration)}"/>
+	<s:Button width="200" height="100" label="Load a Video" click="{loadVideo()}" visible="{!isVideoLoaded}"  horizontalCenter="0" verticalCenter="0"/>
 
 </s:WindowedApplication>

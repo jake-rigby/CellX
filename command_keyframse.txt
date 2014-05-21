@@ -1,0 +1,1 @@
+ffmpeg -i cell.flv -force_key_frames 'expr:gte(t,n_forced*0.04)' out.flv

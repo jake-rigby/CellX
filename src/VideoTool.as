@@ -5,6 +5,7 @@ package
 {
 	import flash.desktop.NativeProcess;
 	import flash.desktop.NativeProcessStartupInfo;
+	import flash.display.BitmapData;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.IOErrorEvent;
@@ -21,7 +22,9 @@ package
 	import mx.core.mx_internal;
 	
 	import  org.osmf.media.MediaPlayer;
-	
+
+	import mx.graphics.ImageSnapshot;
+
 	public class VideoTool extends EventDispatcher
 	{
 		private var pFile:File;
@@ -30,23 +33,38 @@ package
 		private var pInfo:NativeProcessStartupInfo;
 		private var args:Vector.<String> ;
 		
-		private var stream:NetStream;
+		private var _stream:NetStream;
 		private var connection:NetConnection;
 		
-		private var video:Video;
+		private var _video:Video;
 		
 		public function VideoTool(video:Video)
 		{
-			this.video = video;
+			this._video = video;
 			if (!NativeProcess.isSupported) 
 				throw new Error("Native Process not supported");			
 			pFile = File.applicationDirectory.resolvePath("ffmpeg.exe"); //<-- ensure present locally
 			
 		}
 		
+		public function get file():File
+		{
+			return vfile;
+		}
+		
+		public function get video():Video
+		{
+			return _video;
+		}
+		
+		[Bindable(event="streamChanged")] public function get stream():NetStream
+		{
+			return _stream;
+		}
+		
 		public function seek(offset:Number):void
 		{
-			stream.seek(offset);
+			_stream.seek(offset);
 		}
 
 		private function init():void
@@ -90,7 +108,7 @@ package
 			{
 				var videoStream : ByteArray = new ByteArray();
 				process.standardOutput.readBytes(videoStream,0,process.standardOutput.bytesAvailable);
-				stream.appendBytes(videoStream);
+				_stream.appendBytes(videoStream);
 			}
 		}
 		
@@ -108,6 +126,18 @@ package
 			
 			switch (event.info.code)
 			{
+				case "NetStream.Play.Start" :
+					_stream.send("|RtmpSampleAccess", true, true);
+					break;
+				
+				case "NetStream.Buffer.Full" : 
+					trace("buffer full");
+					break; 
+					
+				case "NetStream.Buffer.Empty" : 
+					trace("buffer empty");
+					break; 
+					
 				case "NetConnection.Connect.Success" :
 					start_decode_process();
 					dispatchEvent(event);
@@ -126,22 +156,22 @@ package
 		
 		private function start_decode_process():void
 		{
-			stream = new NetStream(connection);
-			stream.addEventListener(NetStatusEvent.NET_STATUS, onNetstatusHandler);
-			stream.client = { onMetaData:metaDataHandler };
-			video.attachNetStream(stream);
-			//video.mx_internal::videoPlayer.visible = true;
-			//videoDisplay.mx_internal::videoPlayer.attachNetStream(incomingStream);
-			//videoDisplay.mx_internal::videoPlayer.visible = true;			stream.play(null);
+			_stream = new NetStream(connection);
+			_stream.addEventListener(NetStatusEvent.NET_STATUS, onNetstatusHandler);
+			_stream.client = { onMetaData:metaDataHandler };
+			_video.attachNetStream(_stream);
+			_stream.checkPolicyFile = true;
+			_stream.play(null);
 			args = new Vector.<String>();
-			//args.push("-i",vfile.nativePath,"-sameq","-f","flv","-");
-			args.push('-i',vfile.nativePath,'-ar','22050','-b:v','2048k','-f','flv','-','-g:1'); // <-- see comments in reference
+			//args.push("-i",vfile.nativePath,"-sameq","-f","flv","-",'-g:1');
+			args.push('-i',vfile.nativePath,'-ar','22050','-b:v','2048k','-f','flv','-'); // <-- see comments in reference
 			pInfo.arguments = args;
 			if (process.running) {
 				process.closeInput();
 				process.exit();
 			}
 			process.start(pInfo);
+			dispatchEvent(new Event("streamChanged"));
 		}
 		
 		public function browseVideo():void
@@ -177,10 +207,10 @@ package
 				vh = Math.min(360,h);
 				vw = vh * hwR;
 			}
-			video.width = vw;
-			video.height = vh;
-			video.x=(480-vw)/2;
-			video.y=(360-vh)/2;
+			_video.width = vw;
+			_video.height = vh;
+			_video.x=(480-vw)/2;
+			_video.y=(360-vh)/2;
 		}
 		
 	}
