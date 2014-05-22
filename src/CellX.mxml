@@ -29,6 +29,9 @@
 	<fx:Script>
 		<![CDATA[
 			import flash.display.BitmapData;
+			import flash.events.Event;
+			import flash.events.EventDispatcher;
+			import flash.filesystem.File;
 			import flash.filesystem.FileStream;
 			import flash.media.Video;
 			import flash.net.NetStream;
@@ -55,10 +58,12 @@
 			[Bindable] private var isEditing:Boolean = false;
 			
 			[Bindable] private var isVideoLoaded:Boolean = false;
+			[Bindable] private var isConverting:Boolean = false;
 			
-			private var file:File;
+			private var _file:File;
 			private var _renderers:Vector.<SnapShotItemRenderer> = new Vector.<SnapShotItemRenderer>;
 			private var _filename:String;
+			private var _conversionLog:Vector.<String>
 			
 			//private var _videoTool:VideoTool;
 			
@@ -71,6 +76,10 @@
 			private function loadVideo():void
 			{	
 				var converter:ConvertVideo = new ConvertVideo();
+				converter.addEventListener(ConversionProgressEvent.CONVERSION_STARTED, onConversionStarted);
+				converter.addEventListener(ConversionProgressEvent.CONVERSION_PROGRESS, onConversionProgress);
+				_conversionLog = new Vector.<String>;
+				isConverting = true;
 				/*
 				if (!file) file = new File();
 				file.addEventListener(Event.SELECT, openFile);
@@ -80,6 +89,28 @@
 				_videoTool = new VideoTool(video.video);
 				_videoTool.browseVideo();
 				*/
+			}
+			
+			private function onConversionProgress(evt:ConversionProgressEvent):void
+			{
+				_conversionLog.push(evt.msg);
+				logConversionMsg(evt.msg);
+			}
+			
+			private function onConversionStarted(evt:ConversionProgressEvent):void
+			{
+				(evt.target as EventDispatcher).removeEventListener(ConversionProgressEvent.CONVERSION_STARTED, onConversionStarted);
+				(evt.target as EventDispatcher).addEventListener(ConversionProgressEvent.CONVERSION_COMPLETE, onConversionComplete);
+				logConversionMsg('Converting video...');
+				isConverting = true;
+			}
+			
+			private function onConversionComplete(evt:ConversionProgressEvent):void
+			{
+				(evt.target as EventDispatcher).removeEventListener(ConversionProgressEvent.CONVERSION_COMPLETE, onConversionComplete);
+				logConversionMsg('Conversion succesful');
+				isConverting = false;
+				openFile(evt.file);
 			}
 			
 			private function exportCSV():void
@@ -101,10 +132,11 @@
 
 			}
 			
-			private function openFile(evt:Event):void
+			private function openFile(f:File):void//evt:Event):void
 			{
-				video.source = file.url;
-				fileName = file.name;
+				_file = f;
+				video.source = f.url;
+				fileName = f.name;
 				video.play();
 				isVideoLoaded = true;
 			}
@@ -118,7 +150,7 @@
 				var tc:int = int(Math.floor( video.currentTime * 1000)),
 					res:Point = new Point(video.width, video.height),
 					//vo:CaptureVO = new CaptureVO(_videoTool.file.name+':'+tc, bmd, tc, res, _videoTool.file.name);		
-					vo:CaptureVO = new CaptureVO(file.name+':'+tc, bmd, tc, res, file.name);		
+					vo:CaptureVO = new CaptureVO(_file.name+':'+tc, bmd, tc, res, _file.name);		
 					
 				shots.addItem(vo);
 				editor.data = vo;
@@ -240,5 +272,34 @@
 	</s:HGroup>
 	
 	<s:Button width="200" height="100" label="Load a Video" click="{loadVideo()}" visible="{!isVideoLoaded}"  horizontalCenter="0" verticalCenter="0"/>
+	
+	<fx:Declarations>
+		<local:Boolean id="scrollerMd"/>
+	</fx:Declarations>
+	<fx:Script>
+		<![CDATA[
+			private function logConversionMsg(msg:String):void
+			{
+				if (!_conversionLog) _conversionLog = new Vector.<String>;
+				_conversionLog.push(msg);
+				var text:String = '';
+				for (var i:int = 0; i < _conversionLog.length; i++) {
+					text += _conversionLog[i] + "\n";
+				}
+				conversionMsg.text = text;
+			}
+		]]>
+	</fx:Script>
+	<s:Group horizontalCenter="0" verticalCenter="0" width="500" height="300" visible="{isConverting}" >
+		<s:Rect width="100%" height="100%">
+			<s:fill><mx:SolidColor color="0x999999"/> </s:fill>
+		</s:Rect>
+		<s:Scroller id="logScroller" width="100%" height="100%" enterFrame="{if (!scrollerMd) logScroller.verticalScrollBar.value = logScroller.verticalScrollBar.maximum;}" mouseDown="{scrollerMd = true;}" mouseUp="{scrollerMd = false;}">
+			<s:Group id="conversionLog" left="50" right="50" top="20">
+				<s:Label id="conversionMsg" left="50" right="50" top="20" color="0" />
+			</s:Group>
+		</s:Scroller>
+	</s:Group >
+	
 
 </s:WindowedApplication>
