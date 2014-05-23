@@ -32,24 +32,18 @@
 			import flash.events.Event;
 			import flash.events.EventDispatcher;
 			import flash.filesystem.File;
-			import flash.filesystem.FileStream;
-			import flash.media.Video;
-			import flash.net.NetStream;
+			import flash.net.FileReference;
+			
 			import mx.collections.ArrayCollection;
-			import mx.core.IVisualElement;
-			import mx.core.UIComponent;
 			import mx.events.FlexEvent;
 			import mx.events.FlexNativeMenuEvent;
 			import mx.graphics.ImageSnapshot;
-			import mx.messaging.channels.StreamingAMFChannel;
 			
 			import spark.events.RendererExistenceEvent;
 			
 			import org.osmf.events.MediaPlayerStateChangeEvent;
 			import org.osmf.events.TimeEvent;
 			import org.osmf.media.MediaPlayerState;
-			
-			import flash.system.Security;
 			
 			[Bindable] public var fileName:String;
 			
@@ -269,7 +263,7 @@
 			<s:Button click="{ selectVO(null); isEditing = false;}" label="Back to capture" visible="{isEditing}" includeInLayout="{isEditing}" height="100%" />
 			<s:HGroup width="100%" height="100%" visible="{!isEditing}" includeInLayout="{!isEditing}" variableColumnWidth="true" horizontalCenter="0" verticalCenter="0" verticalAlign="middle">
 				<s:Button click="snapshot()" label="Grab frame" visible="{video.duration &amp;&amp; !video.playing &amp;&amp; !isEditing}" includeInLayout="{!isEditing}" height="100%"/>
-				<s:Label color="white" click="{if (video.playing) video.pause() else video.play()}" useHandCursor="true" text="{video.playing ?'||':'►'}" width="30" fontSize="25"/>
+				<s:Label color="white" click="{if (video.playing) video.pause() else video.play()}" useHandCursor="true" text="{video.playing ?'II':'►'}" width="30" fontSize="25"/>
 				<s:Label color="white" text="◄" click="decFrame(event)"/>
 				<s:Label color="white" text="{currentTime.toFixed(3)}s"/>
 				<s:Label color="white" text="►" click="incFrame(event)"/>
