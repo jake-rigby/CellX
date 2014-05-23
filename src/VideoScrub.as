@@ -1,10 +1,13 @@
 package
 {
+	import flash.events.Event;
 	import org.osmf.events.TimeEvent;
 	
 	import spark.components.HSlider;
 	import spark.components.VideoDisplay;
 	import spark.events.TrackBaseEvent;
+	
+	[Event(name="positionChanged", type="flash.events.Event")]
 	
 	public class VideoScrub extends HSlider
 	{
@@ -30,6 +33,7 @@ package
 			if (_videoDisplay) {
 				_videoDisplay.addEventListener(TimeEvent.CURRENT_TIME_CHANGE, onCurrentTimeChange);
 				_videoDisplay.seek(value);
+				dispatchEvent(new VideoScrubEvent(VideoScrubEvent.POSITION_CHANGED, value));
 			}
 		}
 		

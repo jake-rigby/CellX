@@ -2,7 +2,7 @@
 <s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
 					   xmlns:mx="library://ns.adobe.com/flex/mx"
-					   backgroundColor="0" width="1000" height="700" xmlns:local="*" creationComplete="onCreationComplete(event)">
+					   backgroundColor="0x3f3f3f" width="1280" height="950" xmlns:local="*" creationComplete="onCreationComplete(event)">
 	
 	<s:menu>
 		<mx:FlexNativeMenu dataProvider="{nativeMenu}" labelField="@label" showRoot="false" itemClick="menuClickHandler(event)"/>
@@ -52,7 +52,6 @@
 			import flash.system.Security;
 			
 			[Bindable] public var fileName:String;
-			[Bindable] public var currentTime:Number;
 			
 			[Bindable] private var shots:ArrayCollection = new ArrayCollection();
 			[Bindable] private var isEditing:Boolean = false;
@@ -64,6 +63,7 @@
 			private var _renderers:Vector.<SnapShotItemRenderer> = new Vector.<SnapShotItemRenderer>;
 			private var _filename:String;
 			private var _conversionLog:Vector.<String>
+			private var _currentTime:Number;
 			
 			//private var _videoTool:VideoTool;
 			
@@ -162,15 +162,26 @@
 			private function onSnapshotAdded(evt:RendererExistenceEvent):void
 			{
 				evt.renderer.addEventListener(MouseEvent.CLICK, onClickSnapshot);
+				evt.renderer.addEventListener("delete", deleteRenderer);
 				_renderers.push(evt.renderer);
 			}
 			
 			private function onSnapshotRemoved(evt:RendererExistenceEvent):void
 			{
 				evt.renderer.removeEventListener(MouseEvent.CLICK, onClickSnapshot);
+				evt.renderer.removeEventListener("delete", deleteRenderer);
 				_renderers.splice(_renderers.indexOf(evt.renderer), 1);
 			}
 
+			private function deleteRenderer(evt:Event):void
+			{
+				var ssir:SnapShotItemRenderer = evt.target as SnapShotItemRenderer;
+				if (!ssir) return;
+				
+				//_renderers.splice(_renderers.indexOf(renderer), 1);
+				shots.removeItemAt(shots.getItemIndex(ssir.vo));
+				isEditing = false;
+			}
 			
 			protected function onClickVideo(event:MouseEvent):void
 			{
@@ -188,7 +199,6 @@
 			
 			private function selectVO(vo:CaptureVO):void
 			{
-				
 				for (var i:int = 0; i < _renderers.length; i++) {
 					if (_renderers[i].vo == vo) _renderers[i].isSelected = true;
 					else _renderers[i].isSelected = false;
@@ -200,13 +210,29 @@
 			protected function onCreationComplete(event:FlexEvent):void
 			{
 				video.addEventListener(MediaPlayerStateChangeEvent.MEDIA_PLAYER_STATE_CHANGE, onVideoStateChange);
-				//Security.allowDomain("*");
+				video.addEventListener(TimeEvent.CURRENT_TIME_CHANGE, onVideoPOsitionChanged);
 
+			}
+			
+			protected function onVideoPOsitionChanged(event:TimeEvent):void
+			{
+				currentTime = video.currentTime;
 			}
 			
 			protected function onVideoTimeChange(event:TimeEvent):void
 			{
 				currentTime = event.time;
+			}
+			
+			[Bindable(event="currentTimeChanged")] public function get currentTime():Number
+			{
+				return _currentTime;
+			}
+			
+			public function set currentTime(value:Number):void
+			{
+				_currentTime = value;
+				dispatchEvent(new Event("currentTimeChanged"));
 			}
 			
 			protected function incFrame(evt:Event):void
@@ -236,40 +262,42 @@
 			
 		]]>
 	</fx:Script>
-	
-	<s:HGroup width="100%" height="100%" variableColumnWidth="true">
-		
-		<s:Scroller id="scrl" width="200" height="100%">		
-			<s:DataGroup id="shotBrowser" height="100%" dataProvider="{shots}" itemRenderer="SnapShotItemRenderer"
-						 rendererAdd="onSnapshotAdded(event)" rendererRemove="onSnapshotRemoved(event)" >
-				<s:layout>
-					<s:VerticalLayout/>
-				</s:layout>
-			</s:DataGroup>
-		</s:Scroller>
-		
-		<s:VGroup width="100%" height="100%">
-			<s:Group id="display">
-				<s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/>
-				<!--local:Player id="video" width="100%" height="100%" /-->
-				<local:MeasurementComponent width="100%" height="100%" visible="{isEditing}" id="editor" clipAndEnableScrolling="true"/>
-			</s:Group>
-			<s:HGroup width="{display.width}" visible="{!isEditing &amp;&amp; video.duration}" variableColumnWidth="true">
+
+	<s:VGroup variableRowHeight="true" width="100%" horizontalAlign="center">
+		<mx:Spacer height="10"/>
+		<s:Group width="95%" horizontalCenter="0" height="55" visible="{Boolean(video.duration)}">
+			<s:Button click="{ selectVO(null); isEditing = false;}" label="Back to capture" visible="{isEditing}" includeInLayout="{isEditing}" height="100%" />
+			<s:HGroup width="100%" height="100%" visible="{!isEditing}" includeInLayout="{!isEditing}" variableColumnWidth="true" horizontalCenter="0" verticalCenter="0" verticalAlign="middle">
+				<s:Button click="snapshot()" label="Grab frame" visible="{video.duration &amp;&amp; !video.playing &amp;&amp; !isEditing}" includeInLayout="{!isEditing}" height="100%"/>
 				<s:Label color="white" click="{if (video.playing) video.pause() else video.play()}" useHandCursor="true" text="{video.playing ?'||':'►'}" width="30" fontSize="25"/>
 				<s:Label color="white" text="◄" click="decFrame(event)"/>
 				<s:Label color="white" text="{currentTime.toFixed(3)}s"/>
 				<s:Label color="white" text="►" click="incFrame(event)"/>
-				<local:VideoScrub videoDisplay="{video}" stepSize="0.01" maximum="{video.duration}" width="100%"/>
+				<local:VideoScrub id="scrub" videoDisplay="{video}" stepSize="0.01" maximum="{video.duration}" width="100%"/>
 				<s:Label color="white" text="{fileName}" right="0"/>				
 			</s:HGroup>
-			<s:HGroup verticalAlign="bottom" height="30">
-				
-				<s:Button click="snapshot()" label="Grab frame" visible="{video.duration &amp;&amp; !video.playing &amp;&amp; !isEditing}" includeInLayout="{!isEditing}" height="100%"/>
-				<s:Button click="{ selectVO(null); isEditing = false;}" label="Back to capture" visible="{isEditing}" includeInLayout="{isEditing}" height="100%"/>
-			</s:HGroup>			
-		</s:VGroup>
-		
-	</s:HGroup>
+		</s:Group>
+		<mx:Spacer height="10"/>
+		<s:Group id="display" horizontalCenter="0">
+			<s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}">
+				<s:filters>
+					<s:GlowFilter color="0" blurX="10" blurY="10" />
+				</s:filters>
+			</s:VideoDisplay>
+			<!--local:Player id="video" width="100%" height="100%" /-->
+			<local:MeasurementComponent width="100%" height="100%" visible="{isEditing}" id="editor" clipAndEnableScrolling="true">
+			</local:MeasurementComponent>
+		</s:Group>
+	</s:VGroup>
+	
+	<s:Scroller id="scrl" left="40" right="40" height="170" bottom="30">		
+		<s:DataGroup id="shotBrowser" height="100%" dataProvider="{shots}" itemRenderer="SnapShotItemRenderer"
+					 rendererAdd="onSnapshotAdded(event)" rendererRemove="onSnapshotRemoved(event)" >
+			<s:layout>
+				<s:HorizontalLayout verticalAlign="top" />
+			</s:layout>
+		</s:DataGroup>
+	</s:Scroller>
 	
 	<s:Button width="200" height="100" label="Load a Video" click="{loadVideo()}" visible="{!isVideoLoaded}"  horizontalCenter="0" verticalCenter="0"/>
 	

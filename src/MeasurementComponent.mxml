@@ -166,21 +166,24 @@
 			
 		]]>
 	</fx:Script>
+	<s:filters>
+		<s:GlowFilter color="0x7088b0" blurX="10" blurY="10" />
+	</s:filters>
 	
 	<s:BitmapImage width="100%" height="100%" id="bi"/>
 	<mx:UIComponent id="canvas" width="100%" height="100%" />
 	
-	<s:VGroup top="5" left="5" click="{event.stopPropagation()}" mouseDown="{event.stopPropagation()}">
-		<s:TextInput text="@{vo.name}" />
+	<s:HGroup verticalAlign="middle" bottom="5" left="5" click="{event.stopPropagation()}" mouseDown="{event.stopPropagation()}" opaqueBackground="true">
 		<s:Label color="white" text="timecode {vo.timecode}"/>
 		<s:Label color="white" text="source {vo.source}"/>
 		<s:Label color="white" text="resolution {vo.nativeResolution}"/>
 		<s:Label color="white" id="lengthLbl"/>
 		<s:Label color="white" id="calibLengthLbl"/>
 
-	</s:VGroup>
+	</s:HGroup>
 	
-	<s:HGroup top="5" right="5" verticalAlign="bottom" click="{event.stopPropagation()}" mouseDown="{event.stopPropagation()}">
+	<s:HGroup top="5" right="5" left="5" verticalAlign="middle" click="{event.stopPropagation()}" mouseDown="{event.stopPropagation()}" variableColumnWidth="true">
+		<s:TextInput text="@{vo.name}" top="5" left="5" width="100%" />
 		<s:Label visible="{calibrationVO == vo}" color="white" text="calibration value"/>
 		<s:TextInput id="calibInput" visible="{calibrationVO == vo}" text="@{calibrationVO.calibration}" />
 		<s:CheckBox id="isCalibrationCheck" selected="{calibrationVO == vo}" change="onChangeCalibration(event)" />
