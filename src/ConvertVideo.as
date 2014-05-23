@@ -1,19 +1,15 @@
 package  
 {
+	import flash.desktop.NativeProcess;
 	import flash.desktop.NativeProcessStartupInfo;
-	import flash.display.BitmapData;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.IOErrorEvent;
-	import flash.events.NetStatusEvent;
-	import flash.events.ProgressEvent;
-	import flash.events.SecurityErrorEvent;
-	import flash.filesystem.File;
-	import flash.desktop.NativeProcess;
 	import flash.events.NativeProcessExitEvent;
+	import flash.events.ProgressEvent;
+	import flash.events.TimerEvent;
 	import flash.filesystem.File;
 	import flash.utils.Timer;
-	import flash.events.TimerEvent;
 	/**
 	 * ...
 	 * @author Jake Rigby
@@ -40,6 +36,7 @@ package
 				_vFile = new File();
 			}
 			_vFile.addEventListener(Event.SELECT, onSelectHandler);
+			_vFile.addEventListener(Event.CANCEL, onCancelHandler);
 			_vFile.browseForOpen("Select video source file");
 		}
 		
@@ -51,6 +48,11 @@ package
 		private function onSelectHandler(event : Event):void
 		{           
 			init();
+		}
+		
+		private function onCancelHandler(event:Event):void
+		{
+			dispatchEvent(new ConversionProgressEvent(ConversionProgressEvent.CONVERSION_CANCELLED));
 		}
 
 		private function init():void

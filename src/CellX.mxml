@@ -2,19 +2,31 @@
 <s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
 					   xmlns:mx="library://ns.adobe.com/flex/mx"
-					   backgroundColor="0x3f3f3f" width="1280" height="950" xmlns:local="*" creationComplete="onCreationComplete(event)">
-	
+					   backgroundColor="0x3f3f3f" 
+					   width="1280" height="950" xmlns:local="*"					   
+					   creationComplete="onCreationComplete(event)">
 	<s:menu>
 		<mx:FlexNativeMenu dataProvider="{nativeMenu}" labelField="@label" showRoot="false" itemClick="menuClickHandler(event)"/>
 	</s:menu>
-	
+	<!--
+	<fx:Style>
+		@namespace "library://ns.adobe.com/flex/spark";
+		WindowedApplication 
+		{
+			skinClass:ClassReference("spark.skins.spark.SparkChromeWindowedApplicationSkin");
+		}
+	</fx:Style>
+	-->
 	<fx:Declarations>
 		<fx:XML format="e4x" id="nativeMenu"> 
 			<root> 
 				<menuitem label="File"> 
 					<!--menuitem label="1" type="check" toggled="true"/> 
-					<menuitem type="separator"/-->      
-					<menuitem label="Load"/>
+					<menuitem type="separator"/-->  				
+					<menuitem label="New Session"/>
+					<menuitem label="Load Session"/>
+					<menuitem label="Save Session"/>
+					<menuitem label="Load Video"/>
 					<menuitem label="Export CSV"/>
 					<!--menuitem label="SubMenuItem A-3"> 
 					<menuitem label="Sub-SubMenuItem A-3-1"/> 
@@ -33,6 +45,7 @@
 			import flash.events.EventDispatcher;
 			import flash.filesystem.File;
 			import flash.net.FileReference;
+			import flash.net.registerClassAlias;
 			
 			import mx.collections.ArrayCollection;
 			import mx.events.FlexEvent;
@@ -61,10 +74,16 @@
 			
 			//private var _videoTool:VideoTool;
 			
+			registerClassAlias("CaptureVO", CaptureVO);
+			registerClassAlias("flash.geom.Point", Point);
+			
 			protected function menuClickHandler(event:FlexNativeMenuEvent):void
 			{
-				if (event.label == 'Load') loadVideo();
+				if (event.label == 'Load Video') loadVideo();
 				if (event.label == 'Export CSV') exportCSV(); 
+				if (event.label == 'Save Session') saveSession();
+				if (event.label == 'Load Session') loadSession();
+				if (event.label == 'New Session') newSession();
 			}
 			
 			private function loadVideo():void
@@ -72,6 +91,7 @@
 				var converter:ConvertVideo = new ConvertVideo();
 				converter.addEventListener(ConversionProgressEvent.CONVERSION_STARTED, onConversionStarted);
 				converter.addEventListener(ConversionProgressEvent.CONVERSION_PROGRESS, onConversionProgress);
+				converter.addEventListener(ConversionProgressEvent.CONVERSION_CANCELLED, onConversionCancelled);
 				_conversionLog = new Vector.<String>;
 				isConverting = true;
 				/*
@@ -85,10 +105,63 @@
 				*/
 			}
 			
+			private function saveSession():void
+			{
+				var vos:Vector.<CaptureVO> = new Vector.<CaptureVO>;
+				for (var i:int = 0; i < shots.length; i++) {
+					vos.push(shots.getItemAt(i));
+				}
+				var b:ByteArray = new ByteArray();
+				b.writeObject(vos);
+				var save:File = File.desktopDirectory.resolvePath("*.clx");//new File();
+				var onSelected:Function = function(evt:Event):void {
+					(evt.target as IEventDispatcher).removeEventListener(Event.SELECT, onSelected);
+					var str:FileStream = new FileStream();
+					str.openAsync(save, FileMode.WRITE);
+					str.writeBytes(b);
+				}
+				save.addEventListener(Event.SELECT, onSelected);
+				save.browseForSave("Save session");
+			}
+			
+			private function newSession():void
+			{
+				shots = new ArrayCollection();
+				isEditing = false;
+			}
+			
+			private function loadSession():void
+			{
+				var load:FileReference = new FileReference();
+				var onSelected:Function = function(evt:Event):void {
+					(evt.target as IEventDispatcher).removeEventListener(Event.SELECT, onSelected);
+					load.load();
+				}
+				var onCompleted:Function = function(evt:Event):void {
+					(evt.target as IEventDispatcher).removeEventListener(Event.SELECT, onCompleted);
+					var vos:Vector.<CaptureVO> = Vector.<CaptureVO>(load.data.readObject());
+					shots = new ArrayCollection();
+					for (var i:int = 0; i < vos.length; i++) {
+						shots.addItem(vos[i]);
+					}
+					isVideoLoaded = true;
+					return;
+				}
+				load.addEventListener(Event.SELECT, onSelected);
+				load.addEventListener(Event.COMPLETE, onCompleted);
+				load.browse([new FileFilter("CellX session","*.clx")]);
+			}
+			
 			private function onConversionProgress(evt:ConversionProgressEvent):void
 			{
 				_conversionLog.push(evt.msg);
 				logConversionMsg(evt.msg);
+			}
+			
+			private function onConversionCancelled(evt:ConversionProgressEvent):void
+			{
+				isConverting = false;
+			
 			}
 			
 			private function onConversionStarted(evt:ConversionProgressEvent):void
@@ -260,9 +333,9 @@
 	<s:VGroup variableRowHeight="true" width="100%" horizontalAlign="center">
 		<mx:Spacer height="10"/>
 		<s:Group width="95%" horizontalCenter="0" height="55" visible="{Boolean(video.duration)}">
-			<s:Button click="{ selectVO(null); isEditing = false;}" label="Back to capture" visible="{isEditing}" includeInLayout="{isEditing}" height="100%" />
+			<s:Button click="{ selectVO(null); isEditing = false;}" label="Back to capture" visible="{isEditing}" includeInLayout="{isEditing}" height="100%" width="120" />
 			<s:HGroup width="100%" height="100%" visible="{!isEditing}" includeInLayout="{!isEditing}" variableColumnWidth="true" horizontalCenter="0" verticalCenter="0" verticalAlign="middle">
-				<s:Button click="snapshot()" label="Grab frame" visible="{video.duration &amp;&amp; !video.playing &amp;&amp; !isEditing}" includeInLayout="{!isEditing}" height="100%"/>
+				<s:Button width="120" click="snapshot()" label="Grab frame" visible="{video.duration &amp;&amp; !video.playing &amp;&amp; !isEditing}" includeInLayout="{!isEditing}" height="100%"/>
 				<s:Label color="white" click="{if (video.playing) video.pause() else video.play()}" useHandCursor="true" text="{video.playing ?'II':'►'}" width="30" fontSize="25"/>
 				<s:Label color="white" text="◄" click="decFrame(event)"/>
 				<s:Label color="white" text="{currentTime.toFixed(3)}s"/>
@@ -273,25 +346,27 @@
 		</s:Group>
 		<mx:Spacer height="10"/>
 		<s:Group id="display" horizontalCenter="0">
-			<s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}">
-				<s:filters>
-					<s:GlowFilter color="0" blurX="10" blurY="10" />
-				</s:filters>
-			</s:VideoDisplay>
-			<!--local:Player id="video" width="100%" height="100%" /-->
-			<local:MeasurementComponent width="100%" height="100%" visible="{isEditing}" id="editor" clipAndEnableScrolling="true">
+			<s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/>
+			<local:MeasurementComponent width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}" visible="{isEditing}" id="editor" clipAndEnableScrolling="true">
 			</local:MeasurementComponent>
 		</s:Group>
 	</s:VGroup>
 	
-	<s:Scroller id="scrl" left="40" right="40" height="170" bottom="30">		
-		<s:DataGroup id="shotBrowser" height="100%" dataProvider="{shots}" itemRenderer="SnapShotItemRenderer"
-					 rendererAdd="onSnapshotAdded(event)" rendererRemove="onSnapshotRemoved(event)" >
-			<s:layout>
-				<s:HorizontalLayout verticalAlign="top" />
-			</s:layout>
-		</s:DataGroup>
-	</s:Scroller>
+	<s:Group width="100%" bottom="0">
+		<s:Rect width="100%" height="100%">
+			<s:fill>
+				<s:SolidColor color="0x3f3f3f"/>
+			</s:fill>
+		</s:Rect>		
+		<s:Scroller id="scrl" left="40" right="40" height="125" bottom="10" top="10">
+			<s:DataGroup id="shotBrowser" height="100%" dataProvider="{shots}" itemRenderer="SnapShotItemRenderer"
+						 rendererAdd="onSnapshotAdded(event)" rendererRemove="onSnapshotRemoved(event)" >
+				<s:layout>
+					<s:HorizontalLayout verticalAlign="top" />
+				</s:layout>
+			</s:DataGroup>
+		</s:Scroller>
+	</s:Group>
 	
 	<s:Button width="200" height="100" label="Load a Video" click="{loadVideo()}" visible="{!isVideoLoaded}"  horizontalCenter="0" verticalCenter="0"/>
 	

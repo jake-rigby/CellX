@@ -12,6 +12,8 @@ package
 		public static const CONVERSION_COMPLETE:String = "conversionComplete";
 		public static const CONVERSION_STARTED:String = "conversionStarted";
 		public static const CONVERSION_PROGRESS:String = "conversionProgress";
+		public static const CONVERSION_CANCELLED:String = "conversionCancelled";
+		
 		
 		private var _msg:String;
 		private var _file:File;

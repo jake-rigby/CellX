@@ -2,7 +2,7 @@
 <s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
 				xmlns:s="library://ns.adobe.com/flex/spark" 
 				xmlns:mx="library://ns.adobe.com/flex/mx" 
-				autoDrawBackground="false" rollOver="{bg.color=0x345fa5}" rollOut="bg.color= isSelected ? 0x7088b0 : 0x575d67">
+				autoDrawBackground="false" rollOver="{bg.color = isSelected ? 0xa0a0a0 : 0x585858}" rollOut="{bg.color = isSelected ? 0xa0a0a0 : 0x3f3f3f}">
 		
 	<fx:Script>
 		<![CDATA[
@@ -38,8 +38,8 @@
 			
 			private function scale():void
 			{
-				var f:Number = 150/vo.bmd.height;
-				bi.height = 150;
+				var f:Number = 90/vo.bmd.height;
+				bi.height = 90;
 				bi.width = vo.bmd.width * f;
 				lbl.width = bi.width * 0.8;
 			}
@@ -52,29 +52,22 @@
 		]]>
 	</fx:Script>
 	
-	<s:BitmapImage id="bi" source="{vo.bmd}" horizontalCenter="0" />
+	<s:Group top="15">		
+		<s:BitmapImage id="bi" source="{vo.bmd}" horizontalCenter="0"/>
 		
-	<s:Group bottom="20">		
 		<s:Rect width="100%" height="100%" >
 			<s:fill>
 				<s:SolidColor color="0" alpha="0.8" />
 			</s:fill>
 		</s:Rect>
-		<s:Label id="lbl" fontSize="16" text="{vo.name}&#13;frame time {vo.timecode}ms" color="white" top="3" left="3" right="3" bottom="3" />
+		<s:Label id="lbl" text="{vo.name}&#13;frame time {vo.timecode}ms" color="white" left="3" right="3" bottom="3" />
+		<s:Label id="delete" text="X" click="{dlt()}" color="0xffffff" top="10" right="10" />
 	</s:Group>
 	
-	<s:Rect width="100%" height="100%" visible="{!isSelected}">
-		<s:stroke>
-			<s:SolidColorStroke id="bg" color="0x575d67" weight="2" />
-		</s:stroke>
+	<s:Rect height="10" width="100%">
+		<s:fill>
+			<s:SolidColor id="bg" color="{isSelected ? 0xa0a0a0 : 0x3f3f3f}"/>
+		</s:fill>	
 	</s:Rect>
-	
-	<s:Rect width="100%" height="100%" visible="{isSelected}">
-		<s:stroke>
-			<s:SolidColorStroke color="0x7088b0" weight="2" />
-		</s:stroke>
-	</s:Rect>
-	
-	<s:Label id="delete" text="X" click="{dlt()}" color="0xffffff" top="10" right="10" />
 	
 </s:ItemRenderer>

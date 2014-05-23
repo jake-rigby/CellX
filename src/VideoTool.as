@@ -5,7 +5,6 @@ package
 {
 	import flash.desktop.NativeProcess;
 	import flash.desktop.NativeProcessStartupInfo;
-	import flash.display.BitmapData;
 	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.events.IOErrorEvent;
@@ -17,13 +16,6 @@ package
 	import flash.net.NetConnection;
 	import flash.net.NetStream;
 	import flash.utils.ByteArray;
-	import spark.components.VideoDisplay;
-	
-	import mx.core.mx_internal;
-	
-	import  org.osmf.media.MediaPlayer;
-
-	import mx.graphics.ImageSnapshot;
 
 	public class VideoTool extends EventDispatcher
 	{

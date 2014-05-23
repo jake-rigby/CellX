@@ -1,73 +1,67 @@
 package
 {
 	import flash.display.BitmapData;
-	import flash.events.Event;
 	import flash.events.EventDispatcher;
 	import flash.geom.Point;
+	import flash.geom.Rectangle;
+	import flash.utils.ByteArray;
 
 	public class CaptureVO extends EventDispatcher
 	{
-		private var _name:String;
+		[Bindable] public var name:String;
 		private var _bmd:BitmapData;
-		private var _timecode:int;
+		private var _imageBytes:ByteArray;
+		[Bindable] public var imageWidth:int;
+		[Bindable] public var imageHeight:int;
+		[Bindable] public var timecode:int;
 		[Bindable] public var calibration:String;
-		private var _points:Vector.<Point>;
-		private var _nativeResolution:Point;
-		private var _source:String;
+		[Bindable] public var points:Vector.<Point>;
+		[Bindable] public var nativeResolution:Point;
+		[Bindable] public var source:String;
 		
-		public function CaptureVO(name:String, bmd:BitmapData, timecode:int, nativeResoltion:Point, source:String) 
+		public function CaptureVO(name:String = "", bmd:BitmapData = null, timecode:int = -1, nativeResoltion:Point = null, source:String = "") 
 		{
-			_name = name;
+			this.name = name;
 			_bmd = bmd;
-			_timecode = timecode;
-			_points = new Vector.<Point>();
-			_nativeResolution = nativeResoltion;
-			_source = source;	
-		}
-
-		[Bindable(event="nameChanged")]public function get name():String
-		{
-			return _name;
+			if (_bmd) {
+				imageWidth = _bmd.width;
+				imageHeight = _bmd.height;
+			}
+			this.timecode = timecode;
+			this.points = new Vector.<Point>();
+			this.nativeResolution = nativeResoltion;
+			this.source = source;	
 		}
 		
-		public function set name(value:String):void
+		[Bindable(event="_")]public function get bmd():BitmapData
 		{
-			_name = value;
-			dispatchEvent(new Event("nameChanged"));
-		}
-
-		[Bindable(event="event")]public function get bmd():BitmapData
-		{
+			if (!_bmd && _imageBytes && imageWidth && imageHeight) {
+				_bmd = new BitmapData(imageWidth, imageHeight);
+				_bmd.setPixels(new Rectangle(0,0,imageWidth,imageHeight),_imageBytes);
+				//imageBytes.readBytes(_bmd,0,imageWidth * imageHeight);
+			}
 			return _bmd;
 		}
-
-		[Bindable(event="event")]public function get timecode():int
+		
+		public function get imageBytes():ByteArray
 		{
-			return _timecode;
+			return _bmd.getPixels(new Rectangle(0,0,imageWidth,imageHeight));
+		}
+		
+		public function set imageBytes(value:ByteArray):void
+		{
+			_imageBytes = value;
+			_bmd = null;
 		}
 
-		[Bindable(event="event")]public function get points():Vector.<Point>
-		{
-			return _points;
-		}
 
 		public function get length():Number
 		{
 			var result:Number = 0;
-			for (var i:int = 1; i < _points.length; i++) {
-				result += _points[i].subtract(_points[i - 1]).length;
+			for (var i:int = 1; i < points.length; i++) {
+				result += points[i].subtract(points[i - 1]).length;
 			}
 			return result;
-		}
-
-		[Bindable(event="event")]public function get nativeResolution():Point
-		{
-			return _nativeResolution;
-		}
-		
-		[Bindable(event="event")]public function get source():String
-		{
-			return _source;
 		}
 
 	}
