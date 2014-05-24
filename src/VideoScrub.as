@@ -2,6 +2,7 @@ package
 {
 	import flash.events.Event;
 	import org.osmf.events.TimeEvent;
+	import spark.skins.spark.ButtonSkin;
 	
 	import spark.components.HSlider;
 	import spark.components.VideoDisplay;
@@ -25,6 +26,7 @@ package
 		{
 			if (_videoDisplay) {
 				_videoDisplay.seek(value);
+				dispatchEvent(new VideoScrubEvent(VideoScrubEvent.POSITION_CHANGED, value));
 			}
 		}
 		

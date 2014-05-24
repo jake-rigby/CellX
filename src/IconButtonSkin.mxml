@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<s:Skin xmlns:fx="http://ns.adobe.com/mxml/2009"  
+        xmlns:s="library://ns.adobe.com/flex/spark"  
+        xmlns:mx="library://ns.adobe.com/flex/mx" 
+		rollOver="{ovr = true}" rollOut="{ovr = false}"
+		> 
+    <!-- host component --> 
+    <fx:Metadata> 
+        [HostComponent("IconButton")] 
+    </fx:Metadata>
+	
+	<fx:Declarations>
+		<fx:Boolean id="ovr"/>
+	</fx:Declarations>
+	
+	
+	<s:states> 
+        <s:State name="up" /> 
+        <s:State name="over" /> 
+        <s:State name="down" /> 
+        <s:State name="disabled" /> 
+    </s:states> 
+	
+	<s:Image id="image" visible.over="false" visible="true" >
+		<s:filters>
+			<s:GlowFilter color="0x000000" />
+		</s:filters>
+	</s:Image>
+	
+	<s:Image id="imageOver" visible.over="true" visible="false"  >
+		<s:filters>
+			<s:GlowFilter color="0xffffff" />
+		</s:filters>
+	</s:Image>
+
+</s:Skin>

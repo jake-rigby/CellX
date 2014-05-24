@@ -3,8 +3,9 @@
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
 					   xmlns:mx="library://ns.adobe.com/flex/mx"
 					   backgroundColor="0x3f3f3f" 
-					   width="1280" height="950" xmlns:local="*"					   
-					   creationComplete="onCreationComplete(event)">
+					   width="1280" height="768" xmlns:local="*"					   
+					   creationComplete="onCreationComplete(event)"
+					   >
 	<s:menu>
 		<mx:FlexNativeMenu dataProvider="{nativeMenu}" labelField="@label" showRoot="false" itemClick="menuClickHandler(event)"/>
 	</s:menu>
@@ -330,51 +331,63 @@
 		]]>
 	</fx:Script>
 
-	<s:VGroup variableRowHeight="true" width="100%" horizontalAlign="center">
-		<mx:Spacer height="10"/>
-		<s:Group width="95%" horizontalCenter="0" height="55" visible="{Boolean(video.duration)}">
-			<s:Button click="{ selectVO(null); isEditing = false;}" label="Back to capture" visible="{isEditing}" includeInLayout="{isEditing}" height="100%" width="120" />
-			<s:HGroup width="100%" height="100%" visible="{!isEditing}" includeInLayout="{!isEditing}" variableColumnWidth="true" horizontalCenter="0" verticalCenter="0" verticalAlign="middle">
-				<s:Button width="120" click="snapshot()" label="Grab frame" visible="{video.duration &amp;&amp; !video.playing &amp;&amp; !isEditing}" includeInLayout="{!isEditing}" height="100%"/>
-				<s:Label color="white" click="{if (video.playing) video.pause() else video.play()}" useHandCursor="true" text="{video.playing ?'II':'►'}" width="30" fontSize="25"/>
-				<s:Label color="white" text="◄" click="decFrame(event)"/>
-				<s:Label color="white" text="{currentTime.toFixed(3)}s"/>
-				<s:Label color="white" text="►" click="incFrame(event)"/>
+	<s:VGroup variableRowHeight="true" width="100%" height="100%" horizontalAlign="center">
+		
+		<s:Group width="95%" horizontalCenter="0" height="55" visible="{Boolean(video.duration)}" >
+			<local:IconButton url="assets/back.png" click="{ selectVO(null); isEditing = false;}" visible="{isEditing}" bottom="0" />
+			
+			<s:HGroup width="100%" height="100%" visible="{!isEditing}" includeInLayout="{!isEditing}" variableColumnWidth="true" horizontalCenter="0" verticalCenter="0" verticalAlign="bottom">
+				<local:IconButton url="assets/snapshot.png" click="snapshot()" label="Grab frame" visible="{video.duration &amp;&amp; !video.playing &amp;&amp; !isEditing}" includeInLayout="{!isEditing}" />
+				<local:IconButton url="{video.playing ? 'assets/pause.png' : 'assets/play.png'}" click="{if (video.playing) video.pause() else video.play()}" useHandCursor="true"/>
+				<local:IconButton url="assets/nudge-back.png" click="decFrame(event)"/>
+				<s:Label color="white" text="{currentTime.toFixed(3)}s" fontSize="26" width="100" />
+				<local:IconButton url="assets/nudge-forward.png" click="incFrame(event)"/>
 				<local:VideoScrub id="scrub" videoDisplay="{video}" stepSize="0.01" maximum="{video.duration}" width="100%"/>
 				<s:Label color="white" text="{fileName}" right="0"/>				
 			</s:HGroup>
 		</s:Group>
+		
 		<mx:Spacer height="10"/>
-		<s:Group id="display" horizontalCenter="0">
-			<s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/>
-			<local:MeasurementComponent width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}" visible="{isEditing}" id="editor" clipAndEnableScrolling="true">
-			</local:MeasurementComponent>
+		
+		<s:Group height="100%" width="100%" >	
+			<s:Group id="displayGroup" width="100%" height="100%" clipAndEnableScrolling="true">
+				<s:Group id="display" horizontalCenter="0" >
+					<s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/>
+					<local:MeasurementComponent width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}" visible="{isEditing}" id="editor" clipAndEnableScrolling="true">
+					</local:MeasurementComponent>
+				</s:Group>				
+			</s:Group>
+			<s:VScrollBar viewport="{displayGroup}" right="0" height="100%"/>
 		</s:Group>
+		
+		<s:Group width="100%" bottom="0" visible="{!isEditing}" includeInLayout="{!isEditing}">
+			<s:Rect width="100%" height="100%" alpha="0.5">
+				<s:fill>
+					<s:SolidColor color="0"/>
+				</s:fill>
+			</s:Rect>		
+			<s:Scroller id="scrl" left="40" right="40" height="125" bottom="10" top="10">
+				<s:DataGroup id="shotBrowser" height="100%" dataProvider="{shots}" itemRenderer="SnapShotItemRenderer"
+							 rendererAdd="onSnapshotAdded(event)" rendererRemove="onSnapshotRemoved(event)" >
+					<s:layout>
+						<s:HorizontalLayout verticalAlign="top" />
+					</s:layout>
+				</s:DataGroup>
+			</s:Scroller>
+		</s:Group>
+		
 	</s:VGroup>
-	
-	<s:Group width="100%" bottom="0">
-		<s:Rect width="100%" height="100%">
-			<s:fill>
-				<s:SolidColor color="0x3f3f3f"/>
-			</s:fill>
-		</s:Rect>		
-		<s:Scroller id="scrl" left="40" right="40" height="125" bottom="10" top="10">
-			<s:DataGroup id="shotBrowser" height="100%" dataProvider="{shots}" itemRenderer="SnapShotItemRenderer"
-						 rendererAdd="onSnapshotAdded(event)" rendererRemove="onSnapshotRemoved(event)" >
-				<s:layout>
-					<s:HorizontalLayout verticalAlign="top" />
-				</s:layout>
-			</s:DataGroup>
-		</s:Scroller>
-	</s:Group>
+
 	
 	<s:Button width="200" height="100" label="Load a Video" click="{loadVideo()}" visible="{!isVideoLoaded}"  horizontalCenter="0" verticalCenter="0"/>
 	
+	
+	<!-- Conversion Log Panel -->
 	<fx:Declarations>
 		<local:Boolean id="scrollerMd"/>
 	</fx:Declarations>
 	<fx:Script>
-		<![CDATA[
+		<![CDATA[			
 			private function logConversionMsg(msg:String):void
 			{
 				if (!_conversionLog) _conversionLog = new Vector.<String>;
