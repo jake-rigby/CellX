@@ -19,7 +19,6 @@ package
 	public class IconButton extends Button 
 	{
 		[SkinPart(required="true")] public var image:Image;
-		[SkinPart(required = "true")] public var imageOver:Image;
 		[SkinPart(required = "true")] public var ovr:Boolean = false;
 		
 		
@@ -71,7 +70,6 @@ package
 			var bitmap:Bitmap = Bitmap(loader.content);
 			_bmd = bitmap.bitmapData;
 			image.source = new Bitmap(_bmd);
-			imageOver.source = new Bitmap(_bmd);
 		}		
 		
 		override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
@@ -82,11 +80,10 @@ package
 		
 		private function scale():void
 		{
+			if (!_bmd) return;
 			var f:Number = width/_bmd.width;
 			image.width = width;
 			image.height = _bmd.height * f;
-			imageOver.width = width;
-			imageOver.height = _bmd.height * f;
 		}
 		
 	}

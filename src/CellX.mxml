@@ -336,12 +336,12 @@
 		<s:Group width="95%" horizontalCenter="0" height="55" visible="{Boolean(video.duration)}" >
 			<local:IconButton url="assets/back.png" click="{ selectVO(null); isEditing = false;}" visible="{isEditing}" bottom="0" />
 			
-			<s:HGroup width="100%" height="100%" visible="{!isEditing}" includeInLayout="{!isEditing}" variableColumnWidth="true" horizontalCenter="0" verticalCenter="0" verticalAlign="bottom">
+			<s:HGroup width="100%" height="100%" visible="{!isEditing}" includeInLayout="{!isEditing}" gap="15" variableColumnWidth="true" horizontalCenter="0" verticalCenter="0" verticalAlign="bottom">
 				<local:IconButton url="assets/snapshot.png" click="snapshot()" label="Grab frame" visible="{video.duration &amp;&amp; !video.playing &amp;&amp; !isEditing}" includeInLayout="{!isEditing}" />
+				<local:IconButton url="assets/nudge-back.png" click="decFrame(event)" visible="{!video.playing}" />
 				<local:IconButton url="{video.playing ? 'assets/pause.png' : 'assets/play.png'}" click="{if (video.playing) video.pause() else video.play()}" useHandCursor="true"/>
-				<local:IconButton url="assets/nudge-back.png" click="decFrame(event)"/>
+				<local:IconButton url="assets/nudge-forward.png" click="incFrame(event)" visible="{!video.playing}" />
 				<s:Label color="white" text="{currentTime.toFixed(3)}s" fontSize="26" width="100" />
-				<local:IconButton url="assets/nudge-forward.png" click="incFrame(event)"/>
 				<local:VideoScrub id="scrub" videoDisplay="{video}" stepSize="0.01" maximum="{video.duration}" width="100%"/>
 				<s:Label color="white" text="{fileName}" right="0"/>				
 			</s:HGroup>

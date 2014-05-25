@@ -170,7 +170,7 @@
 	<s:VGroup>
 			
 		<s:Group>
-			<s:BitmapImage width="100%" height="100%" id="bi"/>
+			<s:BitmapImage id="bi"/>
 			<mx:UIComponent id="canvas" width="100%" height="100%" />
 		</s:Group>
 		

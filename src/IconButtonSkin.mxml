@@ -21,15 +21,9 @@
         <s:State name="disabled" /> 
     </s:states> 
 	
-	<s:Image id="image" visible.over="false" visible="true" >
+	<s:Image id="image" >
 		<s:filters>
-			<s:GlowFilter color="0x000000" />
-		</s:filters>
-	</s:Image>
-	
-	<s:Image id="imageOver" visible.over="true" visible="false"  >
-		<s:filters>
-			<s:GlowFilter color="0xffffff" />
+			<s:GlowFilter color="0xffffff" alpha.over="1" alpha="0" />
 		</s:filters>
 	</s:Image>
 
