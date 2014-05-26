@@ -31,6 +31,8 @@
 				if (!vo) return;
 				bi.source = vo.bmd;
 				points = vo.points;
+				width = vo.bmd.width;
+				height = vo.bmd.height;
 			}
 			
 			public function get requestedCalibrationState():Boolean

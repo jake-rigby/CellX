@@ -205,7 +205,7 @@
 				_file = f;
 				video.source = f.url;
 				fileName = f.name;
-				video.play();
+				video.pause();
 				isVideoLoaded = true;
 			}
 			
@@ -213,8 +213,6 @@
 			{
 				var bmd:BitmapData = ImageSnapshot.captureBitmapData(video);
 				// why this doesn't work with net streams : http://stackoverflow.com/questions/5607047/how-can-i-use-bitmapdata-draw-with-netstream-appendbytes
-				//var bmd:BitmapData = new BitmapData(.video.width, video.video.height);
-				//bmd.draw(video.video);
 				var tc:int = int(Math.floor( video.currentTime * 1000)),
 					res:Point = new Point(video.width, video.height),
 					//vo:CaptureVO = new CaptureVO(_videoTool.file.name+':'+tc, bmd, tc, res, _videoTool.file.name);		
@@ -224,7 +222,7 @@
 				editor.data = vo;
 				
 				video.pause();
-				selectVO(vo);
+				//selectVO(vo);
 			}
 			
 			private function onSnapshotAdded(evt:RendererExistenceEvent):void
@@ -334,47 +332,68 @@
 	<s:VGroup variableRowHeight="true" width="100%" height="100%" horizontalAlign="center">
 		
 		<s:Group width="95%" horizontalCenter="0" height="55" visible="{Boolean(video.duration)}" >
-			<local:IconButton url="assets/back.png" click="{ selectVO(null); isEditing = false;}" visible="{isEditing}" bottom="0" />
 			
-			<s:HGroup width="100%" height="100%" visible="{!isEditing}" includeInLayout="{!isEditing}" gap="15" variableColumnWidth="true" horizontalCenter="0" verticalCenter="0" verticalAlign="bottom">
-				<local:IconButton url="assets/snapshot.png" click="snapshot()" label="Grab frame" visible="{video.duration &amp;&amp; !video.playing &amp;&amp; !isEditing}" includeInLayout="{!isEditing}" />
-				<local:IconButton url="assets/nudge-back.png" click="decFrame(event)" visible="{!video.playing}" />
-				<local:IconButton url="{video.playing ? 'assets/pause.png' : 'assets/play.png'}" click="{if (video.playing) video.pause() else video.play()}" useHandCursor="true"/>
-				<local:IconButton url="assets/nudge-forward.png" click="incFrame(event)" visible="{!video.playing}" />
-				<s:Label color="white" text="{currentTime.toFixed(3)}s" fontSize="26" width="100" />
-				<local:VideoScrub id="scrub" videoDisplay="{video}" stepSize="0.01" maximum="{video.duration}" width="100%"/>
-				<s:Label color="white" text="{fileName}" right="0"/>				
-			</s:HGroup>
+			<s:Label color="white" text="{fileName}" right="0"/>				
 		</s:Group>
 		
 		<mx:Spacer height="10"/>
 		
-		<s:Group height="100%" width="100%" >	
-			<s:Group id="displayGroup" width="100%" height="100%" clipAndEnableScrolling="true">
-				<s:Group id="display" horizontalCenter="0" >
-					<s:VideoDisplay id="video" visible="{!isEditing}" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}"/>
-					<local:MeasurementComponent width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}" visible="{isEditing}" id="editor" clipAndEnableScrolling="true">
-					</local:MeasurementComponent>
-				</s:Group>				
-			</s:Group>
-			<s:VScrollBar viewport="{displayGroup}" right="0" height="100%"/>
-		</s:Group>
+		<s:HGroup width="100%" height="100%" variableColumnWidth="true">
 		
-		<s:Group width="100%" bottom="0" visible="{!isEditing}" includeInLayout="{!isEditing}">
-			<s:Rect width="100%" height="100%" alpha="0.5">
-				<s:fill>
-					<s:SolidColor color="0"/>
-				</s:fill>
-			</s:Rect>		
-			<s:Scroller id="scrl" left="40" right="40" height="125" bottom="10" top="10">
-				<s:DataGroup id="shotBrowser" height="100%" dataProvider="{shots}" itemRenderer="SnapShotItemRenderer"
+		<!-- snapshot browser -->
+		<s:Group height="100%" width="250" visible="{!isEditing}" includeInLayout="{!isEditing}">	
+			
+			<s:Group id="browserGroup" left="20" right="20" top="30" bottom="30" clipAndEnableScrolling="true">				
+				<s:DataGroup id="shotBrowser" dataProvider="{shots}" itemRenderer="SnapShotItemRenderer" width="170"
 							 rendererAdd="onSnapshotAdded(event)" rendererRemove="onSnapshotRemoved(event)" >
 					<s:layout>
-						<s:HorizontalLayout verticalAlign="top" />
+						<s:VerticalLayout horizontalAlign="left" gap="10" />
 					</s:layout>
 				</s:DataGroup>
-			</s:Scroller>
+			</s:Group>
+			<s:VScrollBar viewport="{browserGroup}" top="30" bottom="30" right="0" visible="{browserGroup.contentHeight > browserGroup.height}" />
+			
 		</s:Group>
+		
+		<!-- video -->
+		<s:Group height="100%" width="100%" visible="{!isEditing &amp;&amp; Boolean(video.duration)}" includeInLayout="{!isEditing}">	
+			
+			<s:Group id="displayGroup" top="20" bottom="20" left="20" right="20" clipAndEnableScrolling="true">
+				<s:Group id="display" horizontalCenter="0" >
+					<s:VideoDisplay id="video" click="onClickVideo(event)" width="{video.videoObject.videoWidth}" height="{video.videoObject.videoHeight}" horizontalCenter="0" verticalCenter="0" />
+					<!-- video controls -->
+					<s:Group width="90%" top="20" horizontalCenter="0" >
+						<s:Rect width="100%" height="100%" radiusX="10"><s:fill><s:SolidColor color="0x3f3f3f" alpha="0.5"/></s:fill></s:Rect>
+						<s:HGroup gap="15" width="100%" variableColumnWidth="true" verticalAlign="middle" paddingBottom="10" paddingLeft="20" paddingRight="20" paddingTop="10">
+							<local:IconButton url="{video.playing ? 'assets/pause.png' : 'assets/play.png'}" click="{if (video.playing) video.pause() else video.play()}" useHandCursor="true"/>
+							<local:IconButton url="assets/snapshot.png" click="{snapshot()}" label="Grab frame" visible="{!video.playing}" includeInLayout="{!isEditing}" />
+							<local:IconButton url="assets/nudge-back.png" click="decFrame(event)" visible="{!video.playing}" />
+							<local:IconButton url="assets/nudge-forward.png" click="incFrame(event)" visible="{!video.playing}" />
+							<s:Label color="white" text="{currentTime.toFixed(3)}s" fontSize="26" width="90" />
+							<local:VideoScrub id="scrub" videoDisplay="{video}" stepSize="0.01" maximum="{video.duration}" width="100%"/>
+						</s:HGroup>
+					</s:Group>
+				</s:Group>				
+			</s:Group>
+			
+			<s:VScrollBar viewport="{displayGroup}" x="{displayGroup.x + displayGroup.width}" y="{displayGroup.y}" height="{displayGroup.height}" visible="{displayGroup.contentHeight > displayGroup.height}"/>
+			<s:HScrollBar viewport="{displayGroup}" y="{displayGroup.y + displayGroup.height}" x="{displayGroup.x}" width="{displayGroup.width}" visible="{displayGroup.contentWidth > displayGroup.width}"/>
+		</s:Group>
+		
+		<!-- editor meta controls (back) -->
+		<s:Group height="100%" width="250" visible="{isEditing}" includeInLayout="{isEditing}">	
+			<local:IconButton url="assets/back.png" click="{ selectVO(null); isEditing = false;}" visible="{isEditing}" bottom="0" />
+		</s:Group>
+		
+		<!-- editor -->
+		<s:Group height="100%" width="100%" visible="{isEditing}" includeInLayout="{isEditing}">	
+			<s:Group width="100%" height="100%" id="editGroup" clipAndEnableScrolling="true">
+				<local:MeasurementComponent id="editor" horizontalCenter="0" />
+			</s:Group>
+			<s:VScrollBar viewport="{editGroup}" right="0" height="100%"/>
+		</s:Group>
+		
+		</s:HGroup>
 		
 	</s:VGroup>
 

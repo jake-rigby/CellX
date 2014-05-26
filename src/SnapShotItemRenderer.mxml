@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
 				xmlns:s="library://ns.adobe.com/flex/spark" 
-				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				xmlns:mx="library://ns.adobe.com/flex/mx"  xmlns:local="*"
 				autoDrawBackground="false" rollOver="{bg.color = isSelected ? 0xa0a0a0 : 0x585858}" rollOut="{bg.color = isSelected ? 0xa0a0a0 : 0x3f3f3f}">
 		
 	<fx:Script>
@@ -9,8 +9,17 @@
 			import flash.events.Event;
 			
 			private var _isSelected:Boolean = false;
+			private var _derivedHeight:Number;
+			
+			[Bindable] public var specifiedWidth:Number = 150;
+			
 			[Bindable] public var vo:CaptureVO;
 			[Bindable] public var res:String;
+			
+			[Bindable(event = "specifiedWidthChanged")] public function get derivedHeight():Number
+			{
+				return _derivedHeight;
+			}
 			
 			[Bindable(event = "isSelectedChanged")] public function get isSelected():Boolean
 			{
@@ -38,10 +47,11 @@
 			
 			private function scale():void
 			{
-				var f:Number = 90/vo.bmd.height;
-				bi.height = 90;
-				bi.width = vo.bmd.width * f;
-				lbl.width = bi.width * 0.8;
+				var f:Number = specifiedWidth/vo.bmd.width;
+				bi.width = specifiedWidth;
+				_derivedHeight = vo.bmd.height * f; 
+				bi.height = _derivedHeight;
+				dispatchEvent(new Event("specifiedWidthChanged"));
 			}
 			
 			private function dlt():void
@@ -52,22 +62,27 @@
 		]]>
 	</fx:Script>
 	
-	<s:Group top="15">		
-		<s:BitmapImage id="bi" source="{vo.bmd}" horizontalCenter="0"/>
-		
-		<s:Rect width="100%" height="100%" >
-			<s:fill>
-				<s:SolidColor color="0" alpha="0.8" />
-			</s:fill>
-		</s:Rect>
-		<s:Label id="lbl" text="{vo.name}&#13;frame time {vo.timecode}ms" color="white" left="3" right="3" bottom="3" />
-		<s:Label id="delete" text="X" click="{dlt()}" color="0xffffff" top="10" right="10" />
-	</s:Group>
+	<s:VGroup top="3" horizontalAlign="center" variableRowHeight="true">
+		<s:BitmapImage id="bi" source="{vo.bmd}">
+			<s:mask>
+				<s:Group>
+				<s:Rect width="{specifiedWidth}" height="{derivedHeight}" radiusX="10" >
+					<s:fill>
+						<s:SolidColor color="0" />
+					</s:fill>
+				</s:Rect>
+				</s:Group>
+			</s:mask>
+			<s:filters>
+				<s:GlowFilter id="bg"  color="{isSelected ? 0xa0a0a0 : 0x3f3f3f}" blurX="5" blurY="5" quality="4" strength="2" /> 
+			</s:filters>
+		</s:BitmapImage>
+		<s:Label id="lbl" text="{vo.name}&#13;frame time {vo.timecode}ms" color="0xffffff" width="{bi.width}" horizontalCenter="0" textAlign="center" />
+	</s:VGroup>
 	
-	<s:Rect height="10" width="100%">
-		<s:fill>
-			<s:SolidColor id="bg" color="{isSelected ? 0xa0a0a0 : 0x3f3f3f}"/>
-		</s:fill>	
-	</s:Rect>
+	<local:IconButton url="assets/close10px.png" top="10" right="10" click="{dlt()}" />
+		
+
+
 	
 </s:ItemRenderer>
