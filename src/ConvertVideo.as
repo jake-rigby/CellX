@@ -160,7 +160,7 @@ package
 		{
 			var p:Array = _vFile.name.split('.');
 			if (p.length > 1) p.pop();
-			p.push('CellX-conversion', 'flv');
+			p.push('flv');
 			var outp:String = _vFile.parent.nativePath + '\\' + p.join('.');
 			//var outp:String = "'" + p.join('.')+"'";
 			_oFile = new File(outp);

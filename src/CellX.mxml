@@ -3,7 +3,7 @@
 					   xmlns:s="library://ns.adobe.com/flex/spark" 
 					   xmlns:mx="library://ns.adobe.com/flex/mx"
 					   backgroundColor="0x3f3f3f" 
-					   width="1280" height="768" xmlns:local="*"					   
+					   width="1100" height="670" xmlns:local="*"					   
 					   creationComplete="onCreationComplete(event)"
 					   >
 	<s:menu>
@@ -22,12 +22,14 @@
 		<fx:XML format="e4x" id="nativeMenu"> 
 			<root> 
 				<menuitem label="File"> 
-					<!--menuitem label="1" type="check" toggled="true"/> 
-					<menuitem type="separator"/-->  				
+					<!--menuitem label="1" type="check" toggled="true"/--> 
 					<menuitem label="New Session"/>
 					<menuitem label="Load Session"/>
 					<menuitem label="Save Session"/>
+					<menuitem type="separator"/>  				
+					<menuitem label="Convert Video"/>
 					<menuitem label="Load Video"/>
+					<menuitem type="separator"/>  				
 					<menuitem label="Export CSV"/>
 					<!--menuitem label="SubMenuItem A-3"> 
 					<menuitem label="Sub-SubMenuItem A-3-1"/> 
@@ -81,29 +83,38 @@
 			protected function menuClickHandler(event:FlexNativeMenuEvent):void
 			{
 				if (event.label == 'Load Video') loadVideo();
+				if (event.label == 'Convert Video') convertVideo();
 				if (event.label == 'Export CSV') exportCSV(); 
 				if (event.label == 'Save Session') saveSession();
 				if (event.label == 'Load Session') loadSession();
 				if (event.label == 'New Session') newSession();
 			}
 			
-			private function loadVideo():void
-			{	
+			private function convertVideo():void
+			{
 				var converter:ConvertVideo = new ConvertVideo();
 				converter.addEventListener(ConversionProgressEvent.CONVERSION_STARTED, onConversionStarted);
 				converter.addEventListener(ConversionProgressEvent.CONVERSION_PROGRESS, onConversionProgress);
 				converter.addEventListener(ConversionProgressEvent.CONVERSION_CANCELLED, onConversionCancelled);
 				_conversionLog = new Vector.<String>;
-				isConverting = true;
-				/*
-				if (!file) file = new File();
-				file.addEventListener(Event.SELECT, openFile);
-				file.browseForOpen("*.flv",[new FileFilter("videos","*.flv")]);
-				*/
+			}
+			
+			private function loadVideo():void
+			{	
+				_file = new File();
+				_file.addEventListener(Event.SELECT, onFileSelected);
+				_file.browseForOpen("*.flv",[new FileFilter("videos","*.flv")]);
+				
 				/*
 				_videoTool = new VideoTool(video.video);
 				_videoTool.browseVideo();
 				*/
+			}
+			
+			private function onFileSelected(evt:Event):void
+			{
+				_file.removeEventListener(Event.SELECT, openFile);
+				openFile(_file);
 			}
 			
 			private function saveSession():void
@@ -167,6 +178,7 @@
 			
 			private function onConversionStarted(evt:ConversionProgressEvent):void
 			{
+				isConverting = true;
 				(evt.target as EventDispatcher).removeEventListener(ConversionProgressEvent.CONVERSION_STARTED, onConversionStarted);
 				(evt.target as EventDispatcher).addEventListener(ConversionProgressEvent.CONVERSION_COMPLETE, onConversionComplete);
 				logConversionMsg('Converting video...');
@@ -251,8 +263,7 @@
 			
 			protected function onClickVideo(event:MouseEvent):void
 			{
-				//if (video.isPlaying) video.pause() else video.play();
-				if (video.playing) video.pause() else video.play();
+				//if (video.playing) video.pause() else video.play();
 			}
 			
 			private function onClickSnapshot(event:MouseEvent):void
@@ -269,7 +280,8 @@
 					if (_renderers[i].vo == vo) _renderers[i].isSelected = true;
 					else _renderers[i].isSelected = false;
 				}
-				editor.data = vo;				
+				editor.data = vo;
+				captureVOInfo.data = vo;
 				isEditing = true;
 			}
 			
@@ -314,6 +326,7 @@
 				//if (video.isPlaying) return;
 				if (video.playing) return;
 				currentTime -= 0.04;
+				if (currentTime < 0) currentTime = 0;
 				video.seek(currentTime);
 			}
 			
@@ -331,13 +344,6 @@
 
 	<s:VGroup variableRowHeight="true" width="100%" height="100%" horizontalAlign="center">
 		
-		<s:Group width="95%" horizontalCenter="0" height="55" visible="{Boolean(video.duration)}" >
-			
-			<s:Label color="white" text="{fileName}" right="0"/>				
-		</s:Group>
-		
-		<mx:Spacer height="10"/>
-		
 		<s:HGroup width="100%" height="100%" variableColumnWidth="true">
 		
 		<!-- snapshot browser -->
@@ -351,8 +357,7 @@
 					</s:layout>
 				</s:DataGroup>
 			</s:Group>
-			<s:VScrollBar viewport="{browserGroup}" top="30" bottom="30" right="0" visible="{browserGroup.contentHeight > browserGroup.height}" />
-			
+			<s:VScrollBar viewport="{browserGroup}" top="30" bottom="30" right="0" visible="{browserGroup.contentHeight > browserGroup.height}" />			
 		</s:Group>
 		
 		<!-- video -->
@@ -369,10 +374,11 @@
 							<local:IconButton url="assets/snapshot.png" click="{snapshot()}" label="Grab frame" visible="{!video.playing}" includeInLayout="{!isEditing}" />
 							<local:IconButton url="assets/nudge-back.png" click="decFrame(event)" visible="{!video.playing}" />
 							<local:IconButton url="assets/nudge-forward.png" click="incFrame(event)" visible="{!video.playing}" />
-							<s:Label color="white" text="{currentTime.toFixed(3)}s" fontSize="26" width="90" />
+							<s:Label color="white" text="{currentTime.toFixed(3)}s" fontSize="26" width="110" />
 							<local:VideoScrub id="scrub" videoDisplay="{video}" stepSize="0.01" maximum="{video.duration}" width="100%"/>
 						</s:HGroup>
 					</s:Group>
+					<s:Label color="white" text="{fileName}" top="5" left="5" />				
 				</s:Group>				
 			</s:Group>
 			
@@ -382,28 +388,30 @@
 		
 		<!-- editor meta controls (back) -->
 		<s:Group height="100%" width="250" visible="{isEditing}" includeInLayout="{isEditing}">	
-			<local:IconButton url="assets/back.png" click="{ selectVO(null); isEditing = false;}" visible="{isEditing}" bottom="0" />
+			<s:VGroup left="20" right="20" top="30" bottom="30" variableRowHeight="true">				
+				<local:IconButton url="assets/back.png" click="{ selectVO(null); isEditing = false;}" />
+				<local:CaptureVOInfo id="captureVOInfo" width="100%" height="100%" />
+			</s:VGroup>
 		</s:Group>
 		
 		<!-- editor -->
-		<s:Group height="100%" width="100%" visible="{isEditing}" includeInLayout="{isEditing}">	
-			<s:Group width="100%" height="100%" id="editGroup" clipAndEnableScrolling="true">
-				<local:MeasurementComponent id="editor" horizontalCenter="0" />
+		<s:Group height="100%" width="100%" visible="{isEditing}" includeInLayout="{isEditing}">				
+			<s:Group id="editGroup" top="20" bottom="20" left="20" right="20" clipAndEnableScrolling="true">
+				<s:Group id="edit" horizontalCenter="0" >
+					<local:MeasurementComponent id="editor" horizontalCenter="0" />
+				</s:Group>
 			</s:Group>
-			<s:VScrollBar viewport="{editGroup}" right="0" height="100%"/>
+			<s:HScrollBar viewport="{editGroup}" y="{editGroup.y + editGroup.height}" x="{editGroup.x}" width="{editGroup.width}" visible="{editGroup.contentWidth > editGroup.width}"/>
+			<s:VScrollBar viewport="{editGroup}" x="{editGroup.x + editGroup.width}" y="{editGroup.y}" height="{editGroup.height}" visible="{editGroup.contentHeight > editGroup.height}"/>
 		</s:Group>
 		
 		</s:HGroup>
 		
 	</s:VGroup>
-
-	
-	<s:Button width="200" height="100" label="Load a Video" click="{loadVideo()}" visible="{!isVideoLoaded}"  horizontalCenter="0" verticalCenter="0"/>
-	
 	
 	<!-- Conversion Log Panel -->
 	<fx:Declarations>
-		<local:Boolean id="scrollerMd"/>
+		<local:Boolean id="scrollerMd"/><!-- for scroll to bottom -->
 	</fx:Declarations>
 	<fx:Script>
 		<![CDATA[			

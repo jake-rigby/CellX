@@ -13,6 +13,7 @@
 	
 	<fx:Script>
 		<![CDATA[
+import flash.events.Event;
 			
 			public static const IS_CALIBRATION_CHANGE:String = "isCalibrationChange";
 			
@@ -34,12 +35,12 @@
 				width = vo.bmd.width;
 				height = vo.bmd.height;
 			}
-			
+			/*
 			public function get requestedCalibrationState():Boolean
 			{
 				return isCalibrationCheck.selected;
 			}
-			
+			*/
 			public function segmentDistToPoint(segA:Point, segB:Point, p:Point):Number
 			{
 				var p2:Point = new Point(segB.x - segA.x, segB.y - segA.y);
@@ -80,6 +81,7 @@
 						
 						points[i].x = canvas.mouseX;
 						points[i].y = canvas.mouseY;
+						vo.dispatchEvent(new Event("lengthChanged"));
 					}
 
 					// line from last point to this one
@@ -108,8 +110,8 @@
 					canvas.graphics.drawCircle(points[i].x, points[i].y, 8);
 				}
 
-				if (vo) lengthLbl.text = 'length '+vo.length.toFixed(4);
-				if (vo && calibrationVO) calibLengthLbl.text = 'calibrated length ' + (vo.length * (Number(calibrationVO.calibration) / calibrationVO.length) ).toFixed(4);
+				//if (vo) lengthLbl.text = 'length '+vo.length.toFixed(4);
+				//if (vo && calibrationVO) calibLengthLbl.text = 'calibrated length ' + (vo.length * (Number(calibrationVO.calibration) / calibrationVO.length) ).toFixed(4);
 			}
 			
 			protected function onCanvasMouseDown(evt:MouseEvent):void
@@ -134,7 +136,8 @@
 					}
 					
 					// add a point if we got here
-					points.push(new Point(evt.localX, evt.localY));
+					//points.push(new Point(evt.localX, evt.localY));
+					vo.addPoint(new Point(evt.localX, evt.localY));
 					hoverPoint = points.length - 1;
 					pointEditMode = true;
 					draw();
@@ -149,12 +152,13 @@
 			protected function onCanvasRollOut(evt:MouseEvent):void
 			{
 				if (pointEditMode) {
-					points.splice(hoverPoint,1);
+					//points.splice(hoverPoint,1);
+					vo.removePoint(hoverPoint);
 					pointEditMode = false;
 				}
 			}
 
-			
+			/*
 			protected function onChangeCalibration(event:Event):void
 			{
 				var evt:Event = new Event(IS_CALIBRATION_CHANGE);
@@ -165,34 +169,44 @@
 					calibrationVO = null;
 				}
 			}
-			
+			*/
 		]]>
 	</fx:Script>
 	
-	<s:VGroup>
-			
-		<s:Group>
-			<s:BitmapImage id="bi"/>
+	<s:Group height="100%" width="100%">	
+	
+		<!-- canvas and image -->
+		<s:Group width="{vo.bmd.width}" height="{vo.bmd.height}">
+			<s:BitmapImage id="bi" width="100%" height="100%" />
 			<mx:UIComponent id="canvas" width="100%" height="100%" />
 		</s:Group>
 		
-		<s:HGroup verticalAlign="middle" bottom="5" left="5" click="{event.stopPropagation()}" mouseDown="{event.stopPropagation()}" opaqueBackground="true">
-			<s:Label color="white" text="timecode {vo.timecode}"/>
-			<s:Label color="white" text="source {vo.source}"/>
-			<s:Label color="white" text="resolution {vo.nativeResolution}"/>
-			<s:Label color="white" id="lengthLbl"/>
-			<s:Label color="white" id="calibLengthLbl"/>
+		<!-- info controls 
+		<s:Group width="90%" top="20" horizontalCenter="0" >
+			<s:Rect width="100%" height="100%" radiusX="10"><s:fill><s:SolidColor color="0x3f3f3f" alpha="0.5"/></s:fill></s:Rect>
+			<s:HGroup gap="15" width="100%" variableColumnWidth="true" verticalAlign="middle" paddingBottom="10" paddingLeft="20" paddingRight="20" paddingTop="10"
+				click="{event.stopPropagation()}" mouseDown="{event.stopPropagation()}">
+				
+				<s:VGroup>
+					
+					<s:Label color="white" text="timecode {vo.timecode}"/>
+					<s:Label color="white" text="source {vo.source}"/>
+					<s:Label color="white" text="resolution {vo.nativeResolution}"/>
+					<s:Label color="white" id="lengthLbl"/>
+					<s:Label color="white" id="calibLengthLbl"/>
 
-		</s:HGroup>
+				</s:VGroup>
+
+				<s:TextInput text="@{vo.name}" top="5" left="5" width="100%" />
+				<s:Label visible="{calibrationVO == vo}" color="white" text="calibration value"/>
+				<s:TextInput id="calibInput" visible="{calibrationVO == vo}" text="@{calibrationVO.calibration}" />
+				<s:CheckBox id="isCalibrationCheck" selected="{calibrationVO == vo}" change="onChangeCalibration(event)" />
+				<s:Label color="white" text="use as calibration" />
+
+			</s:HGroup>
+		</s:Group>
+		-->
 		
-		<s:HGroup top="5" right="5" left="5" verticalAlign="middle" click="{event.stopPropagation()}" mouseDown="{event.stopPropagation()}" variableColumnWidth="true">
-			<s:TextInput text="@{vo.name}" top="5" left="5" width="100%" />
-			<s:Label visible="{calibrationVO == vo}" color="white" text="calibration value"/>
-			<s:TextInput id="calibInput" visible="{calibrationVO == vo}" text="@{calibrationVO.calibration}" />
-			<s:CheckBox id="isCalibrationCheck" selected="{calibrationVO == vo}" change="onChangeCalibration(event)" />
-			<s:Label color="white" text="use as calibration" />
-		</s:HGroup>
-
-	</s:VGroup>
+	</s:Group>
 	
 </s:Group>
