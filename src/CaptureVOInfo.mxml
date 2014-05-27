@@ -30,13 +30,13 @@
 			
 			protected function onChangeCalibration(event:Event):void
 			{
-				var evt:Event = new Event(IS_CALIBRATION_CHANGE);
-				dispatchEvent(evt);
 				if (isCalibrationCheck.selected) {
 					calibrationVO = vo;
 				} else if (calibrationVO == vo) {
 					calibrationVO = null;
 				}
+				var evt:Event = new Event(IS_CALIBRATION_CHANGE);
+				dispatchEvent(evt);
 			}
 			
 		]]>
