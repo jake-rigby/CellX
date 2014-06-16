@@ -1,4 +1,4 @@
-CellX
+[CellX] (http://jake-rigby.github.io/CellX)
 =====
 
 A lightweight video analysis tool to measure arbitrarily wiggly cells.
